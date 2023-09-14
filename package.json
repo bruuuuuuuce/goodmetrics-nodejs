@@ -1,0 +1,44 @@
+{
+  "scripts": {
+    "prebuild": "eslint . --ext .ts",
+    "build": "tsc",
+    "lint": "eslint . --ext .ts",
+    "format": "eslint . --ext .ts --fix"
+  },
+  "main": "dist/index.js",
+  "files": [
+    "dist/"
+  ],
+  "types": "dist/index.d.ts",
+  "devDependencies": {
+    "@types/google-protobuf": "3.15.6",
+    "@types/jest": "27.0.1",
+    "@types/node": "^20.6.0",
+    "@typescript-eslint/eslint-plugin": "4.31.0",
+    "@typescript-eslint/parser": "4.31.0",
+    "eslint": "7.32.0",
+    "eslint-config-prettier": "8.3.0",
+    "eslint-config-standard": "16.0.3",
+    "eslint-plugin-import": "2.24.2",
+    "eslint-plugin-node": "11.1.0",
+    "eslint-plugin-prettier": "4.0.0",
+    "eslint-plugin-promise": "5.1.0",
+    "jest": "27.1.1",
+    "prettier": "2.4.0",
+    "protoc-gen-ts": "^0.8.6",
+    "ts-jest": "27.0.5",
+    "ts-node": "^10.9.1",
+    "typescript": "4.4.2"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "1.9.0",
+    "goodmetrics-generated": "0.0.3",
+    "google-protobuf": "3.21.2",
+    "otlp-generated": "0.0.7"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "name": "goodmetrics-nodejs",
+  "version": "0.0.1"
+}
