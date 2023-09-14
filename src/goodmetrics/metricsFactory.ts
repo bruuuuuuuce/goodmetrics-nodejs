@@ -110,10 +110,6 @@ export class MetricsFactory {
       return;
     }
 
-    const datenow = Date.now();
-    console.log('start time milli', metrics.startMilliTime);
-    console.log('Date.now()', datenow);
-    console.log('diff', datenow - metrics.startMilliTime);
     const duration = Date.now() - metrics.startMilliTime;
     switch (this.totalTimeType) {
       case TotaltimeType.DistributionMilliseconds:
