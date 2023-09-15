@@ -59,8 +59,8 @@ export class OpenTelemetryClient {
   private readonly logRawPayload?: (resourceMetrics: ResourceMetrics) => void;
   constructor(props: OpenTelemetryClientProps) {
     this.client = new MetricsServiceClient(
-      'ingest.lightstep.com:443',
-      ChannelCredentials.createSsl()
+      props.address,
+      props.channelCredentials
     );
     this.resourceDimensions = new Resource({
       attributes: asOtlpDimensions(props.resourceDimensions),
@@ -83,8 +83,10 @@ export class OpenTelemetryClient {
         channelCreds = ChannelCredentials.createSsl();
         break;
     }
+    const port = props.port ?? 5001;
+    const hostname = props.sillyOtlpHostname ?? 'localhost';
     return new OpenTelemetryClient({
-      address: props.sillyOtlpHostname ?? 'localhost',
+      address: `${hostname}:${port}`,
       channelCredentials: channelCreds,
       resourceDimensions: props.resourceDimensions,
       metricDimensions: props.metricDimensions,
