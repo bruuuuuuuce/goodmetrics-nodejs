@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.1.1...v0.1.2) (2023-09-15)
+
+
+### Bug Fixes
+
+* channel credentials passed all the way through ([17ddf37](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/17ddf376d43062a4e3448f97d8f028e642807e1d))
+
 ## [0.1.1](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.1.0...v0.1.1) (2023-09-15)
 
 
