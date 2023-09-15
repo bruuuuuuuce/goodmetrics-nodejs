@@ -98,9 +98,7 @@ export class OpenTelemetryClient {
 
   sendMetricsBatch(batch: _Metrics[]): Promise<void> {
     const resourceMetrics = this.asResourceMetrics(batch);
-    if (this.logRawPayload) {
-      this.logRawPayload(resourceMetrics);
-    }
+    this.logRawPayload && this.logRawPayload(resourceMetrics);
 
     return new Promise((resolve, reject) => {
       this.client.Export(
@@ -119,11 +117,13 @@ export class OpenTelemetryClient {
     });
   }
 
+  close() {
+    this.client.close();
+  }
+
   sendPreaggregatedBatch(batch: AggregatedBatch[]): Promise<void> {
     const resourceMetricsBatch = this.asResourceMetricsFromBatch(batch);
-    if (this.logRawPayload) {
-      this.logRawPayload(resourceMetricsBatch);
-    }
+    this.logRawPayload && this.logRawPayload(resourceMetricsBatch);
 
     return new Promise((resolve, reject) => {
       this.client.Export(

@@ -50,7 +50,7 @@ export class MetricsFactory {
     let timestamp: number;
     switch (stampAt) {
       case TimestampAt.Start:
-        timestamp = Date.now();
+        timestamp = performance.now();
         break;
       case TimestampAt.End:
         timestamp = -1;
@@ -60,7 +60,7 @@ export class MetricsFactory {
     return new _Metrics({
       name,
       timestampMillis: timestamp,
-      startMilliTime: Date.now(),
+      startMilliTime: performance.now(),
       metricsBehavior,
     });
   }
@@ -68,7 +68,7 @@ export class MetricsFactory {
   async record<T>(
     name: string,
     stampAt: TimestampAt,
-    block: (metrics: Metrics) => Promise<T>
+    block: (metrics: Metrics) => Promise<T> | T
   ): Promise<T> {
     return await this.recordWithBehavior(
       name,
@@ -82,14 +82,14 @@ export class MetricsFactory {
     name: string,
     stampAt: TimestampAt,
     metricsBehavior: MetricsBehavior,
-    block: (metrics: Metrics) => Promise<T>
+    block: (metrics: Metrics) => Promise<T> | T
   ): Promise<T> {
     const metrics = this.getMetrics(name, stampAt, metricsBehavior);
     try {
       const res = await block(metrics);
       return res;
     } finally {
-      await this.emit(metrics);
+      this.emit(metrics);
     }
   }
 
@@ -97,20 +97,20 @@ export class MetricsFactory {
    * Complete and release a Metrics to the configured downstream sink.
    * If you don't emit() the metrics it will never show up downstream.
    */
-  private async emit(metrics: _Metrics) {
+  private emit(metrics: _Metrics) {
     this.finalizeMetrics(metrics);
-    await this.metricsSink.emit(metrics);
+    this.metricsSink.emit(metrics);
   }
 
   private finalizeMetrics(metrics: _Metrics) {
     if (metrics.timestampMillis < 1) {
-      metrics.timestampMillis = Date.now();
+      metrics.timestampMillis = performance.now();
     }
     if (metrics.metricsBehavior === MetricsBehavior.NO_TOTALTIME) {
       return;
     }
 
-    const duration = Date.now() - metrics.startMilliTime;
+    const duration = performance.now() - metrics.startMilliTime;
     switch (this.totalTimeType) {
       case TotaltimeType.DistributionMilliseconds:
         metrics.distribution('totaltime', duration);
