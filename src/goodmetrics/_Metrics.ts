@@ -103,12 +103,12 @@ export interface Metrics {
 }
 
 export class _Metrics implements Metrics {
-  private readonly name: string;
+  readonly name: string;
   timestampMillis: number;
   readonly startMilliTime: number;
   readonly metricsBehavior: MetricsBehavior;
-  private readonly metricMeasurements: Map<string, number> = new Map();
-  private readonly metricDistributions: Map<string, number> = new Map();
+  readonly metricMeasurements: Map<string, number> = new Map();
+  readonly metricDistributions: Map<string, number> = new Map();
   private readonly metricDimensions: Map<string, Dimension> = new Map();
   constructor(props: MetricsProps) {
     this.name = props.name;
@@ -181,11 +181,12 @@ export class _Metrics implements Metrics {
     bucketCounts.push(0); // otlp go die in a fire
     const dataPoint = new HistogramDataPoint({
       attributes: otlpDimensions,
-      start_time_unix_nano:
-        (this.timestampMillis - (Date.now() - this.startMilliTime)) *
-        1000 *
-        1000,
-      time_unix_nano: this.timestampMillis * 1000 * 1000,
+      start_time_unix_nano: Math.floor(
+        (this.timestampMillis - (performance.now() - this.startMilliTime)) *
+          1000 *
+          1000
+      ),
+      time_unix_nano: Math.floor(this.timestampMillis * 1000 * 1000),
       count: 1,
       bucket_counts: bucketCounts,
       explicit_bounds: explicitBounds,
@@ -213,7 +214,7 @@ export class _Metrics implements Metrics {
             newNumberDataPoint(
               value,
               this.timestampMillis,
-              Date.now() - this.startMilliTime,
+              performance.now() - this.startMilliTime,
               otlpDimensions
             ),
           ],
@@ -232,5 +233,9 @@ export class _Metrics implements Metrics {
     });
 
     return metricsWeAreReturning;
+  }
+
+  dimensionPosition(): Set<Dimension> {
+    return new Set(Array.from(this.metricDimensions.values()));
   }
 }

@@ -11,9 +11,10 @@ export function newNumberDataPoint(
   const _int = Number.isInteger(value) ? value : undefined;
   if (_int) {
     return new NumberDataPoint({
-      time_unix_nano: timestampMillis * 1000 * 1000,
-      start_time_unix_nano:
-        (timestampMillis - aggregationWidthMillis) * 1000 * 1000,
+      time_unix_nano: Math.floor(timestampMillis * 1000 * 1000),
+      start_time_unix_nano: Math.floor(
+        (timestampMillis - aggregationWidthMillis) * 1000 * 1000
+      ),
       attributes: dimensions,
       // todo how do determine if is int or double???
       as_int: _int,
@@ -21,9 +22,10 @@ export function newNumberDataPoint(
   }
 
   return new NumberDataPoint({
-    time_unix_nano: timestampMillis * 1000 * 1000,
-    start_time_unix_nano:
-      (timestampMillis - aggregationWidthMillis) * 1000 * 1000,
+    time_unix_nano: Math.floor(timestampMillis * 1000 * 1000),
+    start_time_unix_nano: Math.floor(
+      (timestampMillis - aggregationWidthMillis) * 1000 * 1000
+    ),
     attributes: dimensions,
     // todo how do determine if is int or double???
     as_double: value,

@@ -25,10 +25,10 @@ interface ToOtlpProps {
 }
 
 interface Props {
-  min: number;
-  max: number;
-  sum: number;
-  count: number;
+  min?: number;
+  max?: number;
+  sum?: number;
+  count?: number;
 }
 
 export class StatisticSet extends Aggregation {
@@ -36,12 +36,12 @@ export class StatisticSet extends Aggregation {
   private max: number;
   private sum: number;
   private count: number;
-  constructor(props: Props) {
+  constructor(props?: Props) {
     super();
-    this.min = props.min;
-    this.max = props.max;
-    this.sum = props.sum;
-    this.count = props.count;
+    this.min = props?.min ?? Number.MAX_VALUE;
+    this.max = props?.max ?? Number.MIN_VALUE;
+    this.sum = props?.sum ?? 0;
+    this.count = props?.count ?? 0;
   }
 
   addSS(other: StatisticSet): StatisticSet {

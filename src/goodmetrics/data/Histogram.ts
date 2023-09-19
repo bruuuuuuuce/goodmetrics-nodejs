@@ -62,8 +62,8 @@ export class Histogram extends Aggregation {
       data_points: [
         new HistogramDataPoint({
           attributes: props.dimensions,
-          start_time_unix_nano: startTimeUnixMilli * 1000 * 1000,
-          time_unix_nano: props.timestampMillis * 1000 * 1000,
+          start_time_unix_nano: Math.floor(startTimeUnixMilli * 1000 * 1000),
+          time_unix_nano: Math.floor(props.timestampMillis * 1000 * 1000),
           count,
           bucket_counts: otlpBucketCounts,
           explicit_bounds: otlpExplicitBounds,
