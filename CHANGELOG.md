@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.0](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.1.2...v0.2.0) (2023-09-19)
+
+
+### Features
+
+* add native otlp support ([#4](https://github.com/bruuuuuuuce/goodmetrics-nodejs/issues/4)) ([c3477b1](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/c3477b14c02a5148cd001160722050d076a68a35))
+* add new metrics setup for goodmetrics client ([#6](https://github.com/bruuuuuuuce/goodmetrics-nodejs/issues/6)) ([6dd8446](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/6dd8446e2bfeace3da8faedf552655229b45d46e))
+
 ## [0.1.2](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.1.1...v0.1.2) (2023-09-15)
 
 
