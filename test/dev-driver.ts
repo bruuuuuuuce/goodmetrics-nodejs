@@ -45,4 +45,4 @@ const main = async () => {
   await delay(15000);
 };
 
-main().finally();
+void main().finally();
