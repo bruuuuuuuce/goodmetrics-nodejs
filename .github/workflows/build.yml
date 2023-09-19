@@ -16,7 +16,6 @@ jobs:
         with:
           node-version: 16
       - name: Install and Build
-        if: ${{ steps.release.outputs.release_created }}
         run: |
           npm ci
           npm run build
