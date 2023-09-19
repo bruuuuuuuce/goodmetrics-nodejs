@@ -8,6 +8,7 @@ import Histogram = otlp_metrics.opentelemetry.proto.metrics.v1.Histogram;
 import HistogramDataPoint = otlp_metrics.opentelemetry.proto.metrics.v1.HistogramDataPoint;
 import AggregationTemporality = otlp_metrics.opentelemetry.proto.metrics.v1.AggregationTemporality;
 import {newNumberDataPoint} from './data/otlp/numbersDataPoint';
+import {goodmetrics} from 'goodmetrics-generated';
 
 export enum MetricsBehavior {
   DEFAULT = 'default',
@@ -21,6 +22,8 @@ export abstract class Dimension {
   }
 
   abstract asOtlpKeyValue(): KeyValue;
+
+  abstract asGoodmetricsDimension(): goodmetrics.Dimension;
 }
 
 export class StringDimension extends Dimension {
@@ -33,6 +36,12 @@ export class StringDimension extends Dimension {
   asOtlpKeyValue(): KeyValue {
     const value = new AnyValue({string_value: this.value});
     return new KeyValue({key: this.name, value});
+  }
+
+  asGoodmetricsDimension(): goodmetrics.Dimension {
+    return new goodmetrics.Dimension({
+      string: this.value,
+    });
   }
 }
 
@@ -47,6 +56,12 @@ export class NumberDimension extends Dimension {
     const value = new AnyValue({int_value: this.value});
     return new KeyValue({key: this.name, value});
   }
+
+  asGoodmetricsDimension(): goodmetrics.Dimension {
+    return new goodmetrics.Dimension({
+      number: this.value,
+    });
+  }
 }
 
 export class BooleanDimension extends Dimension {
@@ -59,6 +74,12 @@ export class BooleanDimension extends Dimension {
   asOtlpKeyValue(): KeyValue {
     const value = new AnyValue({bool_value: this.value});
     return new KeyValue({key: this.name, value});
+  }
+
+  asGoodmetricsDimension(): goodmetrics.Dimension {
+    return new goodmetrics.Dimension({
+      boolean: this.value,
+    });
   }
 }
 
@@ -109,7 +130,7 @@ export class _Metrics implements Metrics {
   readonly metricsBehavior: MetricsBehavior;
   readonly metricMeasurements: Map<string, number> = new Map();
   readonly metricDistributions: Map<string, number> = new Map();
-  private readonly metricDimensions: Map<string, Dimension> = new Map();
+  readonly metricDimensions: Map<string, Dimension> = new Map();
   constructor(props: MetricsProps) {
     this.name = props.name;
     this.timestampMillis = props.timestampMillis;

@@ -15,6 +15,7 @@ import {Batcher} from './pipeline/batcher';
 // @ts-ignore
 import * as csp from 'js-csp';
 import {AggregatedBatch, Aggregator} from './pipeline/aggregator';
+import {GoodmetricsClient} from './downstream/goodmetricsClient';
 
 export interface ConfiguredMetrics {
   unaryMetricsFactory: MetricsFactory;
@@ -76,7 +77,32 @@ interface LightstepNativeOtlpProps {
   onSendPreaggregated?: (aggregatedBatch: AggregatedBatch[]) => void;
 }
 
+interface GoodmetricsSetupProps {
+  host?: string;
+  port?: number;
+  aggregationWidthMillis?: number;
+}
+
 export class MetricsSetups {
+  static goodMetrics(props: GoodmetricsSetupProps): ConfiguredMetrics {
+    const host = props.host ?? 'localhost';
+    const port = props.port ?? 9573;
+    const aggregationWidthMillis = props.aggregationWidthMillis ?? 10 * 1000;
+    const unaryFactory = this.configureGoodmetricsUnaryFactory({
+      host: host,
+      port: port,
+    });
+    const preaggregatedFactory = this.configureGoodmetricsPreaggregatedFactory({
+      host,
+      port,
+      aggregationWidthMillis,
+    });
+
+    return {
+      unaryMetricsFactory: unaryFactory,
+      preaggregatedMetricsFactory: preaggregatedFactory,
+    };
+  }
   static lightstepNativeOtlp(
     props: LightstepNativeOtlpProps
   ): ConfiguredMetrics {
@@ -235,5 +261,80 @@ export class MetricsSetups {
         new HeaderInterceptorProvider(headers).createHeadersInterceptor(),
       ],
     });
+  }
+
+  private static configureGoodmetricsUnaryFactory(props: {
+    host: string;
+    port: number;
+  }): MetricsFactory {
+    const unaryClient = GoodmetricsClient.connect({
+      hostname: props.host,
+      port: props.port,
+    });
+    const unarySink = new SynchronizingBuffer();
+    const unaryFactory = new MetricsFactory({
+      metricsSink: unarySink,
+      totalTimeType: TotaltimeType.DistributionMilliseconds,
+    });
+    const unaryBatcher = new Batcher({upstream: unarySink});
+
+    // launching coroutine to process unary metric batches
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
+    csp.go(async function* () {
+      for await (const batch of unaryBatcher.consume()) {
+        if (batch.length === 0) {
+          console.log('batch array has no length, no metrics to send');
+          yield;
+          continue;
+        }
+        try {
+          await unaryClient.sendMetricsBatch(batch);
+        } catch (e) {
+          console.error('failed to send unary batch', e);
+        }
+        yield;
+      }
+    });
+
+    return unaryFactory;
+  }
+
+  private static configureGoodmetricsPreaggregatedFactory(props: {
+    host: string;
+    port: number;
+    aggregationWidthMillis: number;
+  }): MetricsFactory {
+    const preaggregatedClient = GoodmetricsClient.connect({
+      hostname: props.host ?? 'localhost',
+      port: props.port ?? 9573,
+    });
+    const preaggregatedSink = new Aggregator({
+      aggregationWidthMillis: props.aggregationWidthMillis,
+    });
+    const preaggregatedFactory = new MetricsFactory({
+      metricsSink: preaggregatedSink,
+      totalTimeType: TotaltimeType.DistributionMilliseconds,
+    });
+    const preaggregatedBatcher = new Batcher({upstream: preaggregatedSink});
+
+    // launching coroutine to process unary metric batches
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
+    csp.go(async function* () {
+      for await (const batch of preaggregatedBatcher.consume()) {
+        if (batch.length === 0) {
+          console.log('batch array has no length, no metrics to send');
+          yield;
+          continue;
+        }
+        try {
+          await preaggregatedClient.sendPreaggregatedMetrics(batch);
+        } catch (e) {
+          console.error('failed to send preaggregated batch', e);
+        }
+        yield;
+      }
+    });
+
+    return preaggregatedFactory;
   }
 }

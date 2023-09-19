@@ -1,7 +1,4 @@
-import {
-  OpenTelemetryClient,
-  SecurityMode,
-} from './goodmetrics/downstream/openTelemetryClient';
+import {SecurityMode} from './goodmetrics/downstream/openTelemetryClient';
 import {Dimension} from './goodmetrics/_Metrics';
 import {MetricsSink} from './goodmetrics/pipeline/metricsSink';
 import {
@@ -11,7 +8,6 @@ import {
 } from './goodmetrics/metricsFactory';
 import {MetricsSetups} from './goodmetrics/metricsSetups';
 export {
-  OpenTelemetryClient,
   Dimension,
   SecurityMode,
   MetricsSink,

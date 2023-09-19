@@ -4,7 +4,7 @@
     "build": "tsc",
     "lint": "eslint . --ext .ts",
     "format": "eslint . --ext .ts --fix",
-    "dev-driver": "ts-node --prefer-ts-exts src/dev-driver.ts"
+    "dev-driver": "ts-node --prefer-ts-exts test/dev-driver.ts"
   },
   "main": "dist/index.js",
   "files": [

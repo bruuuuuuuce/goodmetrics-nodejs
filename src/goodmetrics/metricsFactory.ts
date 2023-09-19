@@ -31,6 +31,17 @@ interface Props {
   totalTimeType: TotaltimeType;
 }
 
+interface RecordOptions {
+  name: string;
+  stampAt?: TimestampAt;
+}
+
+interface RecordWithBehaviorOptions {
+  name: string;
+  stampAt?: TimestampAt;
+  behavior: MetricsBehavior;
+}
+
 export class MetricsFactory {
   protected readonly metricsSink: MetricsSink;
   private readonly totalTimeType: TotaltimeType;
@@ -66,25 +77,25 @@ export class MetricsFactory {
   }
 
   async record<T>(
-    name: string,
-    stampAt: TimestampAt,
+    options: RecordOptions,
     block: (metrics: Metrics) => Promise<T> | T
   ): Promise<T> {
     return await this.recordWithBehavior(
-      name,
-      stampAt,
-      MetricsBehavior.DEFAULT,
+      {
+        name: options.name,
+        stampAt: options.stampAt,
+        behavior: MetricsBehavior.DEFAULT,
+      },
       block
     );
   }
 
   async recordWithBehavior<T>(
-    name: string,
-    stampAt: TimestampAt,
-    metricsBehavior: MetricsBehavior,
+    options: RecordWithBehaviorOptions,
     block: (metrics: Metrics) => Promise<T> | T
   ): Promise<T> {
-    const metrics = this.getMetrics(name, stampAt, metricsBehavior);
+    const stampAt = options.stampAt ?? TimestampAt.Start;
+    const metrics = this.getMetrics(options.name, stampAt, options.behavior);
     try {
       const res = await block(metrics);
       return res;
