@@ -1,35 +1,58 @@
 # Goodmetrics Nodejs
 
-example usage
+Nodejs metrics client to be used with either the goodmetrics protocol, or any open telemetry compliant protocol.
+Currently has a built in lightstep open telemetry client.
+
+This library is based off of the opensource [kotlin goodmetrics library](https://github.com/kvc0/goodmetrics_kotlin)
+
+## Installing
+```bash
+npm i goodmetrics-nodejs
+```
+
+example usages 
 ```javascript
 import {Dimension, MetricsSetups} from 'goodmetrics-nodejs';
 
-const delay = async (ms: number): Promise<void> => {
-  return await new Promise(resolve => {
-    setTimeout(() => {
-      resolve();
-    }, ms);
-  });
-};
-
 const main = async () => {
-  const metrics =
+    // metrics setup for recording metrics inside of a lambda
+  const lambdaMetrics =
     MetricsSetups.lightstepNativeOtlpButItSendsMetricsUponRecordingForLambda({
-      aggregationWidthMillis: 10 * 1000 * 1000,
+      aggregationWidthMillis: 10 * 1000,
       lightstepAccessToken: '<your lightstep api key>',
-      prescientDimensions: new Map<string, Dimension>(),
+      resourceDimensions: new Map<string, Dimension>(),
     });
 
-  await metrics.unaryMetricsFactory.record(
+  await lambdaMetrics.unaryMetricsFactory.record(
     {name: 'test'},
     async metrics => {
       console.info('inside metrics block');
       metrics.measure('runs', 1);
-      await delay(100);
+      // await some async task
       metrics.dimension('result', 'success');
+    }
+  );
+
+  // using goodmetrics
+  const goodmetrics = MetricsSetups.goodMetrics();
+  await goodmetrics.unaryMetricsFactory.record({name: 'unary'}, metrics => {
+    metrics.dimension('is_local', true);
+    metrics.measure('runs', 1);
+  });
+  await goodmetrics.preaggregatedMetricsFactory.record(
+    {name: 'preaggregated'},
+    metrics => {
+        metrics.measure('w00t', 1);
     }
   );
 };
 
 main().finally();
 ```
+
+## Protos
+- [open telemetry client protos](https://github.com/bruuuuuuuce/otlp-generated)
+- [goodmetrics client protos](https://github.com/bruuuuuuuce/goodmetrics-generated)
+
+## Goodmetrics
+More information about the goodmetrics protocol can be found [here](https://github.com/kvc0/goodmetrics)

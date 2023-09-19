@@ -1,5 +1,5 @@
 import {SecurityMode} from './goodmetrics/downstream/openTelemetryClient';
-import {Dimension} from './goodmetrics/_Metrics';
+import {Dimension, Metrics} from './goodmetrics/_Metrics';
 import {MetricsSink} from './goodmetrics/pipeline/metricsSink';
 import {
   MetricsFactory,
@@ -15,4 +15,5 @@ export {
   TotaltimeType,
   TimestampAt,
   MetricsSetups,
+  Metrics,
 };
