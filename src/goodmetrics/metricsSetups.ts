@@ -23,12 +23,34 @@ export interface ConfiguredMetrics {
 }
 
 interface LightstepNativeLambdaOtlpProps {
+  /**
+   * programmatic access token for the lightstep backend
+   * https://docs.lightstep.com/docs/create-and-manage-api-keys
+   */
   lightstepAccessToken: string;
-  prescientDimensions: Map<string, Dimension>;
+  /**
+   * Included resource dimensions on the OTLP resource. Ex. AWS_REGION, ACCOUNT_ID etc...
+   */
+  resourceDimensions: Map<string, Dimension>;
+  /**
+   * aggregated batch width in milliseconds
+   */
   aggregationWidthMillis: number;
+  /**
+   * defaults to `ingest.lightstep.com`, the default lightstep ingest url
+   */
   lightstepUrl?: string;
+  /**
+   * defaults to 443, the default lightstep port
+   */
   lightstepPort?: number;
+  /**
+   * defaults to SecurityMode.Tls, for use with https
+   */
   lightstepConnectionSecurityMode?: SecurityMode;
+  /**
+   * timeout for the requests to send metrics to lightsteps backend
+   */
   timeoutSeconds?: number;
   logError: (message: string, error: unknown) => void;
   onSendUnary?: (metrics: Metrics[]) => void;
@@ -84,10 +106,10 @@ interface GoodmetricsSetupProps {
 }
 
 export class MetricsSetups {
-  static goodMetrics(props: GoodmetricsSetupProps): ConfiguredMetrics {
-    const host = props.host ?? 'localhost';
-    const port = props.port ?? 9573;
-    const aggregationWidthMillis = props.aggregationWidthMillis ?? 10 * 1000;
+  static goodMetrics(props?: GoodmetricsSetupProps): ConfiguredMetrics {
+    const host = props?.host ?? 'localhost';
+    const port = props?.port ?? 9573;
+    const aggregationWidthMillis = props?.aggregationWidthMillis ?? 10 * 1000;
     const unaryFactory = this.configureGoodmetricsUnaryFactory({
       host: host,
       port: port,
@@ -146,6 +168,12 @@ export class MetricsSetups {
       preaggregatedMetricsFactory,
     };
   }
+
+  /**
+   * Configures a unary metric factory which will send and record metrics upon lambda
+   * completion
+   * @param props
+   */
   static lightstepNativeOtlpButItSendsMetricsUponRecordingForLambda(
     props: LightstepNativeLambdaOtlpProps
   ): MetricsFactory {
@@ -156,7 +184,7 @@ export class MetricsSetups {
       sillyOtlpHostname: props.lightstepUrl ?? 'ingest.lightstep.com',
       port: props.lightstepPort ?? 443,
       metricDimensions: new Map(),
-      resourceDimensions: new Map(),
+      resourceDimensions: props.resourceDimensions,
       interceptors: [
         new HeaderInterceptorProvider(headers).createHeadersInterceptor(),
       ],
