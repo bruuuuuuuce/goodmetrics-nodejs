@@ -62,6 +62,15 @@ export class StatisticSet extends Aggregation {
     });
   }
 
+  values() {
+    return {
+      min: this.min,
+      max: this.max,
+      count: this.count,
+      sum: this.sum,
+    };
+  }
+
   private statisticSetDataPoint(props: StatisticSetDataPointProps): Metric {
     return new Metric({
       name: `${props.metricName}_${props.measurementName}_${props.statisticSetComponent}`,

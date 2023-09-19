@@ -2,9 +2,7 @@
 
 example usage
 ```javascript
-import {MetricsSetups} from './goodmetrics/metricsSetups';
-import {Dimension} from './goodmetrics/_Metrics';
-import {TimestampAt} from './goodmetrics/metricsFactory';
+import {Dimension, MetricsSetups} from 'goodmetrics-nodejs';
 
 const delay = async (ms: number): Promise<void> => {
   return await new Promise(resolve => {
@@ -22,12 +20,15 @@ const main = async () => {
       prescientDimensions: new Map<string, Dimension>(),
     });
 
-  await metrics.record('my_metric', TimestampAt.Start, async metrics => {
-    console.info('inside metrics block');
-    metrics.measure('runs', 1);
-    await delay(100);
-    metrics.dimension('result', 'success');
-  });
+  await metrics.unaryMetricsFactory.record(
+    {name: 'test'},
+    async metrics => {
+      console.info('inside metrics block');
+      metrics.measure('runs', 1);
+      await delay(100);
+      metrics.dimension('result', 'success');
+    }
+  );
 };
 
 main().finally();

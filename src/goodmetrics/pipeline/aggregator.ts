@@ -9,6 +9,7 @@ import {_Metrics, Dimension} from '../_Metrics';
 import {MetricsPipeline} from './metricsPipeline';
 import {MetricsSink} from './metricsSink';
 import {CancellationToken} from './cancellationToken';
+import {goodmetrics} from 'goodmetrics-generated';
 
 type DimensionPosition = Set<Dimension>;
 
@@ -86,6 +87,43 @@ export class AggregatedBatch {
     });
   }
 
+  asGoodmetrics(): goodmetrics.Datum[] {
+    const datums: goodmetrics.Datum[] = [];
+    for (const [dimensionPosition, measurementMap] of this.positions) {
+      const templateDatum = this.initializeGoodMetricPositionDatum(
+        dimensionPosition,
+        this.timestampMillis,
+        this.metric
+      );
+      for (const [measurement, aggregation] of measurementMap) {
+        templateDatum.measurements.set(
+          measurement,
+          this.aggregationAsGoodmetricsProto(aggregation)
+        );
+      }
+      datums.push(templateDatum);
+    }
+
+    return datums;
+  }
+
+  private initializeGoodMetricPositionDatum(
+    dimensionPosition: MetricPosition,
+    timestampMillis: number,
+    name: string
+  ): goodmetrics.Datum {
+    const dimensionsMap = new Map<string, goodmetrics.Dimension>();
+    for (const position of dimensionPosition) {
+      dimensionsMap.set(position.name, position.asGoodmetricsDimension());
+    }
+
+    return new goodmetrics.Datum({
+      unix_nanos: Math.floor(timestampMillis * 1000 * 1000),
+      metric: name,
+      dimensions: dimensionsMap,
+    });
+  }
+
   private asGoofyOtlpMetricSequence(): Metric[] {
     const metricsWeCareAbout: Metric[] = [];
     this.positions.forEach((measurements, metricPositions) => {
@@ -120,6 +158,36 @@ export class AggregatedBatch {
     });
 
     return metricsWeCareAbout;
+  }
+
+  private aggregationAsGoodmetricsProto(
+    aggregation: Aggregation
+  ): goodmetrics.Measurement {
+    if (aggregation instanceof Histogram) {
+      const buckets = new Map<number, number>();
+      for (const [bucket, count] of aggregation.bucketCounts) {
+        buckets.set(bucket, count);
+      }
+      return new goodmetrics.Measurement({
+        histogram: new goodmetrics.Histogram({
+          buckets,
+        }),
+      });
+    } else if (aggregation instanceof StatisticSet) {
+      const aggreValues = aggregation.values();
+      return new goodmetrics.Measurement({
+        statistic_set: new goodmetrics.StatisticSet({
+          samplecount: aggreValues.count,
+          samplesum: aggreValues.sum,
+          minimum: aggreValues.min,
+          maximum: aggreValues.max,
+        }),
+      });
+    } else {
+      throw new Error(
+        'cannot convert aggregation into a goodmetrics proto, unknown type'
+      );
+    }
   }
 }
 
