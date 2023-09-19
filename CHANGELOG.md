@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.2.0...v0.2.1) (2023-09-19)
+
+
+### Bug Fixes
+
+* build should run on every pr ([#8](https://github.com/bruuuuuuuce/goodmetrics-nodejs/issues/8)) ([4fb49fb](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/4fb49fbfc9a54cdf49fbc9a149aed228321f9458))
+
 ## [0.2.0](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.1.2...v0.2.0) (2023-09-19)
 
 
