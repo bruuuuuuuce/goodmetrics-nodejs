@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.2.1...v0.2.2) (2023-09-22)
+
+
+### Bug Fixes
+
+* imports should not be pulled from dist dir ([#10](https://github.com/bruuuuuuuce/goodmetrics-nodejs/issues/10)) ([db7abd7](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/db7abd76af7486b687e6c6faf1ca5b999af7a985))
+
 ## [0.2.1](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.2.0...v0.2.1) (2023-09-19)
 
 
