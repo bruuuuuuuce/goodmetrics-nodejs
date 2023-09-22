@@ -6,11 +6,12 @@
     "format": "eslint . --ext .ts --fix",
     "dev-driver": "ts-node --prefer-ts-exts test/dev-driver.ts"
   },
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "files": [
-    "dist/"
+    "dist/src",
+    "dist/package.json"
   ],
-  "types": "dist/index.d.ts",
+  "types": "dist/src/index.d.ts",
   "devDependencies": {
     "@types/google-protobuf": "3.15.6",
     "@types/jest": "27.0.1",

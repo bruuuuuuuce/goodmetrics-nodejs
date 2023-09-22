@@ -1,5 +1,11 @@
 import {SecurityMode} from './goodmetrics/downstream/openTelemetryClient';
-import {Dimension, Metrics} from './goodmetrics/_Metrics';
+import {
+  Dimension,
+  Metrics,
+  StringDimension,
+  BooleanDimension,
+  NumberDimension,
+} from './goodmetrics/_Metrics';
 import {MetricsSink} from './goodmetrics/pipeline/metricsSink';
 import {
   MetricsFactory,
@@ -16,4 +22,7 @@ export {
   TimestampAt,
   MetricsSetups,
   Metrics,
+  StringDimension,
+  BooleanDimension,
+  NumberDimension,
 };
