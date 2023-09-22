@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.2.2...v0.3.0) (2023-09-22)
+
+
+### Features
+
+* bump the build ([4e1d240](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/4e1d240d1ba77df7b424edbfbe0f166a7aefe019))
+
 ## [0.2.2](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.2.1...v0.2.2) (2023-09-22)
 
 
