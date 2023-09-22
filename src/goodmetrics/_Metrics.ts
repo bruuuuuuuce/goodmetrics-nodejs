@@ -53,13 +53,13 @@ export class NumberDimension extends Dimension {
   }
 
   asOtlpKeyValue(): KeyValue {
-    const value = new AnyValue({int_value: this.value});
+    const value = new AnyValue({int_value: Math.floor(this.value)});
     return new KeyValue({key: this.name, value});
   }
 
   asGoodmetricsDimension(): goodmetrics.Dimension {
     return new goodmetrics.Dimension({
-      number: this.value,
+      number: Math.floor(this.value),
     });
   }
 }

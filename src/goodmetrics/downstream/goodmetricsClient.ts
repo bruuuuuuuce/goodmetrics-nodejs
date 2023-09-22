@@ -96,7 +96,10 @@ export class GoodmetricsClient {
         }
       }
       for (const [key, value] of metric.metricDistributions) {
-        measurementsMap.set(key, new goodmetrics.Measurement({i64: value}));
+        measurementsMap.set(
+          key,
+          new goodmetrics.Measurement({i64: Math.floor(value)})
+        );
       }
       return new goodmetrics.Datum({
         metric: metric.name,
