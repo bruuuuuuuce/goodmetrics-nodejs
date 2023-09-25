@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.3.0...v0.3.1) (2023-09-25)
+
+
+### Bug Fixes
+
+* correct ! checks ([#14](https://github.com/bruuuuuuuce/goodmetrics-nodejs/issues/14)) ([1bd9c26](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/1bd9c2691902da7a653e2ee7b0578539f847e662))
+* use performance.now() and Date.now() correctly ([#17](https://github.com/bruuuuuuuce/goodmetrics-nodejs/issues/17)) ([fae9de7](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/fae9de7871aa09eba8cc749546d23f46590d8907))
+
 ## [0.3.0](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.2.2...v0.3.0) (2023-09-22)
 
 
