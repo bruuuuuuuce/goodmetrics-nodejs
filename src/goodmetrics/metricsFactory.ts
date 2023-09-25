@@ -99,7 +99,7 @@ export class MetricsFactory {
       const res = await block(metrics);
       return res;
     } finally {
-      this.emit(metrics);
+      await this.emit(metrics);
     }
   }
 
@@ -107,9 +107,9 @@ export class MetricsFactory {
    * Complete and release a Metrics to the configured downstream sink.
    * If you don't emit() the metrics it will never show up downstream.
    */
-  private emit(metrics: _Metrics) {
+  private async emit(metrics: _Metrics) {
     this.finalizeMetrics(metrics);
-    this.metricsSink.emit(metrics);
+    await this.metricsSink.emit(metrics);
   }
 
   private finalizeMetrics(metrics: _Metrics) {
