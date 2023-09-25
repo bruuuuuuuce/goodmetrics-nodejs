@@ -195,105 +195,105 @@ type AggregatorProps = {
   aggregationWidthMillis?: number;
 };
 
-export class Aggregator
-  implements MetricsPipeline<AggregatedBatch>, MetricsSink
-{
-  private readonly aggregationWidthMillis: number;
-  private readonly cancellationToken: CancellationToken;
-  private currentBatch: MetricsMap;
-  private lastEmit: number;
-
-  constructor(props: AggregatorProps) {
-    const now = performance.now();
-    this.aggregationWidthMillis = props.aggregationWidthMillis ?? 10 * 1000;
-    this.lastEmit = now - (now % this.aggregationWidthMillis);
-    this.currentBatch = new Map();
-    this.cancellationToken = new CancellationToken();
-  }
-
-  private delay = async (millis: number): Promise<void> => {
-    let timeoutId: NodeJS.Timeout | undefined;
-    try {
-      return await new Promise<void>(resolve => {
-        timeoutId = setTimeout(() => {
-          resolve();
-        }, millis);
-      });
-    } finally {
-      clearTimeout(timeoutId);
-    }
-  };
-
-  async *consume(): AsyncGenerator<AggregatedBatch, void, void> {
-    while (true) {
-      if (this.cancellationToken.isCancelled()) {
-        return;
-      }
-      // epoch time at which we will next emit metrics
-      const nextEmit = this.lastEmit + this.aggregationWidthMillis;
-      // difference between now and when we will next emit metrics, should be negative
-      const timeToNextEmit = performance.now() - nextEmit;
-      this.lastEmit += this.aggregationWidthMillis;
-      if (timeToNextEmit > 0 || this.aggregationWidthMillis < -timeToNextEmit) {
-        // Skip a time column because of sadness.
-        // Resume on the column cadence as best we can.
-        // TODO race with cancellation
-        await this.delay(Math.abs(timeToNextEmit));
-        continue;
-      }
-
-      // TODO race with cancellation
-      await this.delay(-timeToNextEmit);
-      const batch = this.currentBatch;
-      this.currentBatch = new Map();
-
-      for (const [metric, positions] of batch) {
-        if (this.cancellationToken.isCancelled()) {
-          return;
-        }
-        yield new AggregatedBatch({
-          timestampMillis: this.lastEmit,
-          aggregationWidthMillis: this.aggregationWidthMillis,
-          metric: metric,
-          positions: positions,
-        });
-      }
-    }
-  }
-
-  emit(metrics: _Metrics): void {
-    const position = metrics.dimensionPosition();
-    let metricPositions = this.currentBatch.get(metrics.name);
-    if (!metricPositions) {
-      metricPositions = new Map();
-      this.currentBatch.set(metrics.name, metricPositions);
-    }
-
-    // Simple measurements are statistic_sets
-    for (const [name, value] of metrics.metricMeasurements) {
-      if (!metricPositions.has(position)) {
-        metricPositions.set(position, new Map());
-      }
-      if (!metricPositions.get(position)!.has(name)) {
-        metricPositions.get(position)!.set(name, new StatisticSet({}));
-      }
-      const ss = metricPositions.get(position)!.get(name)!;
-      ss.accumulate(value);
-    }
-
-    for (const [name, value] of metrics.metricDistributions) {
-      if (!metricPositions.has(position)) {
-        metricPositions.set(position, new Map());
-      }
-      if (!metricPositions.get(position)!.has(name)) {
-        metricPositions.get(position)!.set(name, new Histogram());
-      }
-      const histogram = metricPositions.get(position)!.get(name)!;
-      histogram.accumulate(value);
-    }
-  }
-
-  close(): void {
-    this.cancellationToken.cancel();
-  }
-}
+// export class Aggregator
+//   implements MetricsPipeline<AggregatedBatch>, MetricsSink
+// {
+//   private readonly aggregationWidthMillis: number;
+//   private readonly cancellationToken: CancellationToken;
+//   private currentBatch: MetricsMap;
+//   private lastEmit: number;
+//
+//   constructor(props: AggregatorProps) {
+//     const now = performance.now();
+//     this.aggregationWidthMillis = props.aggregationWidthMillis ?? 10 * 1000;
+//     this.lastEmit = now - (now % this.aggregationWidthMillis);
+//     this.currentBatch = new Map();
+//     this.cancellationToken = new CancellationToken();
+//   }
+//
+//   private delay = async (millis: number): Promise<void> => {
+//     let timeoutId: NodeJS.Timeout | undefined;
+//     try {
+//       return await new Promise<void>(resolve => {
+//         timeoutId = setTimeout(() => {
+//           resolve();
+//         }, millis);
+//       });
+//     } finally {
+//       clearTimeout(timeoutId);
+//     }
+//   };
+//
+//   async *consume(): AsyncGenerator<AggregatedBatch, void, void> {
+//     while (true) {
+//       if (this.cancellationToken.isCancelled()) {
+//         return;
+//       }
+//       // epoch time at which we will next emit metrics
+//       const nextEmit = this.lastEmit + this.aggregationWidthMillis;
+//       // difference between now and when we will next emit metrics, should be negative
+//       const timeToNextEmit = performance.now() - nextEmit;
+//       this.lastEmit += this.aggregationWidthMillis;
+//       if (timeToNextEmit > 0 || this.aggregationWidthMillis < -timeToNextEmit) {
+//         // Skip a time column because of sadness.
+//         // Resume on the column cadence as best we can.
+//         // TODO race with cancellation
+//         await this.delay(Math.abs(timeToNextEmit));
+//         continue;
+//       }
+//
+//       // TODO race with cancellation
+//       await this.delay(-timeToNextEmit);
+//       const batch = this.currentBatch;
+//       this.currentBatch = new Map();
+//
+//       for (const [metric, positions] of batch) {
+//         if (this.cancellationToken.isCancelled()) {
+//           return;
+//         }
+//         yield new AggregatedBatch({
+//           timestampMillis: this.lastEmit,
+//           aggregationWidthMillis: this.aggregationWidthMillis,
+//           metric: metric,
+//           positions: positions,
+//         });
+//       }
+//     }
+//   }
+//
+//   emit(metrics: _Metrics): void {
+//     const position = metrics.dimensionPosition();
+//     let metricPositions = this.currentBatch.get(metrics.name);
+//     if (!metricPositions) {
+//       metricPositions = new Map();
+//       this.currentBatch.set(metrics.name, metricPositions);
+//     }
+//
+//     // Simple measurements are statistic_sets
+//     for (const [name, value] of metrics.metricMeasurements) {
+//       if (!metricPositions.has(position)) {
+//         metricPositions.set(position, new Map());
+//       }
+//       if (!metricPositions.get(position)!.has(name)) {
+//         metricPositions.get(position)!.set(name, new StatisticSet({}));
+//       }
+//       const ss = metricPositions.get(position)!.get(name)!;
+//       ss.accumulate(value);
+//     }
+//
+//     for (const [name, value] of metrics.metricDistributions) {
+//       if (!metricPositions.has(position)) {
+//         metricPositions.set(position, new Map());
+//       }
+//       if (!metricPositions.get(position)!.has(name)) {
+//         metricPositions.get(position)!.set(name, new Histogram());
+//       }
+//       const histogram = metricPositions.get(position)!.get(name)!;
+//       histogram.accumulate(value);
+//     }
+//   }
+//
+//   close(): void {
+//     this.cancellationToken.cancel();
+//   }
+// }

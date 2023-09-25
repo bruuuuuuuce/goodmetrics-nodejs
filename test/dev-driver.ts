@@ -9,40 +9,30 @@ const delay = async (ms: number) => {
 };
 
 const main = async () => {
-  const metrics = MetricsSetups.lightstepNativeOtlp({
-    aggregationWidthMillis: 10 * 1000,
-    lightstepAccessToken: process.env.LIGHTSTEP_ACCESS_TOKEN || '',
-    logError(message: string, error: unknown): void {
-      console.error(message, error);
-    },
-    onSendUnary(metrics: Metrics[]): void {
-      console.log('sending unary', metrics);
-    },
-  });
+  const metrics =
+    MetricsSetups.lightstepNativeOtlpButItSendsMetricsUponRecordingForLambda({
+      resourceDimensions: new Map(),
+      aggregationWidthMillis: 10 * 1000,
+      lightstepAccessToken: process.env.LIGHTSTEP_ACCESS_TOKEN || '',
+      logError(message: string, error: unknown): void {
+        console.error(message, error);
+      },
+      onSendUnary(metrics: Metrics[]): void {
+        console.log('sending unary', metrics);
+      },
+    });
 
-  const goodmetrics = MetricsSetups.goodMetrics();
-  await goodmetrics.unaryMetricsFactory.record({name: 'unary'}, metrics => {
-    metrics.dimension('is_local', true);
-    metrics.measure('runs', 1);
-  });
-  await goodmetrics.preaggregatedMetricsFactory.record(
-    {name: 'preaggregated'},
-    metrics => {
-      metrics.measure('w00t', 1);
-    }
-  );
-
-  await delay(8000);
-  await metrics.unaryMetricsFactory.record(
+  await metrics.record(
     {
-      name: 'test',
+      name: 'integrations',
     },
-    metrics => {
+    // eslint-disable-next-line require-await
+    async metrics => {
       metrics.measure('runs', 1);
     }
   );
 
-  await delay(15000);
+  await delay(10000);
 };
 
 void main().finally();

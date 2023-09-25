@@ -1,6 +1,6 @@
 import {_Metrics} from '../_Metrics';
 
 export interface MetricsSink {
-  emit(metrics: _Metrics): void;
-  close(): void;
+  emit(metrics: _Metrics): Promise<void>;
+  // close(): void;
 }

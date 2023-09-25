@@ -14,7 +14,7 @@ import {Batcher} from './pipeline/batcher';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import * as csp from 'js-csp';
-import {AggregatedBatch, Aggregator} from './pipeline/aggregator';
+import {AggregatedBatch} from './pipeline/aggregator';
 import {GoodmetricsClient} from './downstream/goodmetricsClient';
 
 export interface ConfiguredMetrics {
@@ -106,68 +106,68 @@ interface GoodmetricsSetupProps {
 }
 
 export class MetricsSetups {
-  static goodMetrics(props?: GoodmetricsSetupProps): ConfiguredMetrics {
-    const host = props?.host ?? 'localhost';
-    const port = props?.port ?? 9573;
-    const aggregationWidthMillis = props?.aggregationWidthMillis ?? 10 * 1000;
-    const unaryFactory = this.configureGoodmetricsUnaryFactory({
-      host: host,
-      port: port,
-    });
-    const preaggregatedFactory = this.configureGoodmetricsPreaggregatedFactory({
-      host,
-      port,
-      aggregationWidthMillis,
-    });
-
-    return {
-      unaryMetricsFactory: unaryFactory,
-      preaggregatedMetricsFactory: preaggregatedFactory,
-    };
-  }
-  static lightstepNativeOtlp(
-    props: LightstepNativeOtlpProps
-  ): ConfiguredMetrics {
-    const client = this.opentelemetryClient({
-      metricDimensions: props.metricDimensions ?? new Map<string, Dimension>(),
-      resourceDimensions:
-        props.resourceDimensions ?? new Map<string, Dimension>(),
-      lightstepToken: props.lightstepAccessToken,
-      lightstepPort: props.lightstepPort ?? 443,
-      lightstepUrl: props.lightstepUrl ?? 'ingest.lightstep.com',
-    });
-
-    const unarySink = this.configureBatchedUnaryLightstepSink({
-      batchMaxAgeSeconds: props.unaryBatchMaxAgeSeconds ?? 10,
-      batchSize: props.unaryBatchSizeMaxMetricsCount ?? 1000,
-      client: client,
-      logError: props.logError,
-      onSendUnary: props.onSendUnary,
-    });
-    const preaggregatedSink = this.configureBatchedPreaggregatedLightstepSink({
-      aggregationWidthMillis: props.aggregationWidthMillis,
-      batchMaxAgeSeconds: props.preaggregatedBatchMaxAgeSeconds ?? 10,
-      batchSize: props.preaggregatedBatchMaxMetricsCount ?? 1000,
-      client: client,
-      logError: props.logError,
-      onSendPreaggregated: props.onSendPreaggregated,
-    });
-
-    const unaryMetricsFactory = new MetricsFactory({
-      metricsSink: unarySink,
-      totalTimeType: TotaltimeType.DistributionMilliseconds,
-    });
-
-    const preaggregatedMetricsFactory = new MetricsFactory({
-      metricsSink: preaggregatedSink,
-      totalTimeType: TotaltimeType.DistributionMilliseconds,
-    });
-
-    return {
-      unaryMetricsFactory,
-      preaggregatedMetricsFactory,
-    };
-  }
+  // static goodMetrics(props?: GoodmetricsSetupProps): ConfiguredMetrics {
+  //   const host = props?.host ?? 'localhost';
+  //   const port = props?.port ?? 9573;
+  //   const aggregationWidthMillis = props?.aggregationWidthMillis ?? 10 * 1000;
+  //   const unaryFactory = this.configureGoodmetricsUnaryFactory({
+  //     host: host,
+  //     port: port,
+  //   });
+  //   const preaggregatedFactory = this.configureGoodmetricsPreaggregatedFactory({
+  //     host,
+  //     port,
+  //     aggregationWidthMillis,
+  //   });
+  //
+  //   return {
+  //     unaryMetricsFactory: unaryFactory,
+  //     preaggregatedMetricsFactory: preaggregatedFactory,
+  //   };
+  // }
+  // static lightstepNativeOtlp(
+  //   props: LightstepNativeOtlpProps
+  // ): ConfiguredMetrics {
+  //   const client = this.opentelemetryClient({
+  //     metricDimensions: props.metricDimensions ?? new Map<string, Dimension>(),
+  //     resourceDimensions:
+  //       props.resourceDimensions ?? new Map<string, Dimension>(),
+  //     lightstepToken: props.lightstepAccessToken,
+  //     lightstepPort: props.lightstepPort ?? 443,
+  //     lightstepUrl: props.lightstepUrl ?? 'ingest.lightstep.com',
+  //   });
+  //
+  //   const unarySink = this.configureBatchedUnaryLightstepSink({
+  //     batchMaxAgeSeconds: props.unaryBatchMaxAgeSeconds ?? 10,
+  //     batchSize: props.unaryBatchSizeMaxMetricsCount ?? 1000,
+  //     client: client,
+  //     logError: props.logError,
+  //     onSendUnary: props.onSendUnary,
+  //   });
+  //   const preaggregatedSink = this.configureBatchedPreaggregatedLightstepSink({
+  //     aggregationWidthMillis: props.aggregationWidthMillis,
+  //     batchMaxAgeSeconds: props.preaggregatedBatchMaxAgeSeconds ?? 10,
+  //     batchSize: props.preaggregatedBatchMaxMetricsCount ?? 1000,
+  //     client: client,
+  //     logError: props.logError,
+  //     onSendPreaggregated: props.onSendPreaggregated,
+  //   });
+  //
+  //   const unaryMetricsFactory = new MetricsFactory({
+  //     metricsSink: unarySink,
+  //     totalTimeType: TotaltimeType.DistributionMilliseconds,
+  //   });
+  //
+  //   const preaggregatedMetricsFactory = new MetricsFactory({
+  //     metricsSink: preaggregatedSink,
+  //     totalTimeType: TotaltimeType.DistributionMilliseconds,
+  //   });
+  //
+  //   return {
+  //     unaryMetricsFactory,
+  //     preaggregatedMetricsFactory,
+  //   };
+  // }
 
   /**
    * Configures a unary metric factory which will send and record metrics upon lambda
@@ -190,16 +190,13 @@ export class MetricsSetups {
       ],
     });
     const unarySink: MetricsSink = {
-      close(): void {
-        client.close();
-      },
-      emit(metrics: _Metrics): void {
+      async emit(metrics: _Metrics): Promise<void> {
         props?.onSendUnary && props.onSendUnary([metrics]);
-        client
-          .sendMetricsBatch([metrics])
-          .catch(e =>
-            props.logError('error while sending blocking metrics', e)
-          );
+        try {
+          await client.sendMetricsBatch([metrics]);
+        } catch (e) {
+          props.logError('error while sending blocking metrics', e);
+        }
       },
     };
 
@@ -240,38 +237,38 @@ export class MetricsSetups {
     return unarySink;
   }
 
-  private static configureBatchedPreaggregatedLightstepSink(
-    props: ConfigureBatchedPreaggregatedLightstepSinkProps
-  ): Aggregator {
-    const sink = new Aggregator({
-      aggregationWidthMillis: props.aggregationWidthMillis,
-    });
-    const aggregatedBatcher = new Batcher({
-      upstream: sink,
-      batchSize: props.batchSize,
-      batchAgeSeconds: props.batchMaxAgeSeconds,
-    });
-
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
-    csp.go(async function* () {
-      for await (const batch of aggregatedBatcher.consume()) {
-        if (batch.length === 0) {
-          console.log('batch array has no length, no aggregated batch to send');
-          yield;
-          continue;
-        }
-        try {
-          props.onSendPreaggregated && props.onSendPreaggregated(batch);
-          await props.client.sendPreaggregatedBatch(batch);
-        } catch (e) {
-          props.logError('failed to send aggregated batch', e);
-        }
-        yield;
-      }
-    });
-
-    return sink;
-  }
+  // private static configureBatchedPreaggregatedLightstepSink(
+  //   props: ConfigureBatchedPreaggregatedLightstepSinkProps
+  // ): Aggregator {
+  //   const sink = new Aggregator({
+  //     aggregationWidthMillis: props.aggregationWidthMillis,
+  //   });
+  //   const aggregatedBatcher = new Batcher({
+  //     upstream: sink,
+  //     batchSize: props.batchSize,
+  //     batchAgeSeconds: props.batchMaxAgeSeconds,
+  //   });
+  //
+  //   // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
+  //   csp.go(async function* () {
+  //     for await (const batch of aggregatedBatcher.consume()) {
+  //       if (batch.length === 0) {
+  //         console.log('batch array has no length, no aggregated batch to send');
+  //         yield;
+  //         continue;
+  //       }
+  //       try {
+  //         props.onSendPreaggregated && props.onSendPreaggregated(batch);
+  //         await props.client.sendPreaggregatedBatch(batch);
+  //       } catch (e) {
+  //         props.logError('failed to send aggregated batch', e);
+  //       }
+  //       yield;
+  //     }
+  //   });
+  //
+  //   return sink;
+  // }
 
   private static opentelemetryClient(
     props: PrivateOtelClientProps
@@ -327,42 +324,42 @@ export class MetricsSetups {
     return unaryFactory;
   }
 
-  private static configureGoodmetricsPreaggregatedFactory(props: {
-    host: string;
-    port: number;
-    aggregationWidthMillis: number;
-  }): MetricsFactory {
-    const preaggregatedClient = GoodmetricsClient.connect({
-      hostname: props.host ?? 'localhost',
-      port: props.port ?? 9573,
-    });
-    const preaggregatedSink = new Aggregator({
-      aggregationWidthMillis: props.aggregationWidthMillis,
-    });
-    const preaggregatedFactory = new MetricsFactory({
-      metricsSink: preaggregatedSink,
-      totalTimeType: TotaltimeType.DistributionMilliseconds,
-    });
-    const preaggregatedBatcher = new Batcher({upstream: preaggregatedSink});
-
-    // launching coroutine to process unary metric batches
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
-    csp.go(async function* () {
-      for await (const batch of preaggregatedBatcher.consume()) {
-        if (batch.length === 0) {
-          console.log('batch array has no length, no metrics to send');
-          yield;
-          continue;
-        }
-        try {
-          await preaggregatedClient.sendPreaggregatedMetrics(batch);
-        } catch (e) {
-          console.error('failed to send preaggregated batch', e);
-        }
-        yield;
-      }
-    });
-
-    return preaggregatedFactory;
-  }
+  // private static configureGoodmetricsPreaggregatedFactory(props: {
+  //   host: string;
+  //   port: number;
+  //   aggregationWidthMillis: number;
+  // }): MetricsFactory {
+  //   const preaggregatedClient = GoodmetricsClient.connect({
+  //     hostname: props.host ?? 'localhost',
+  //     port: props.port ?? 9573,
+  //   });
+  //   const preaggregatedSink = new Aggregator({
+  //     aggregationWidthMillis: props.aggregationWidthMillis,
+  //   });
+  //   const preaggregatedFactory = new MetricsFactory({
+  //     metricsSink: preaggregatedSink,
+  //     totalTimeType: TotaltimeType.DistributionMilliseconds,
+  //   });
+  //   const preaggregatedBatcher = new Batcher({upstream: preaggregatedSink});
+  //
+  //   // launching coroutine to process unary metric batches
+  //   // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
+  //   csp.go(async function* () {
+  //     for await (const batch of preaggregatedBatcher.consume()) {
+  //       if (batch.length === 0) {
+  //         console.log('batch array has no length, no metrics to send');
+  //         yield;
+  //         continue;
+  //       }
+  //       try {
+  //         await preaggregatedClient.sendPreaggregatedMetrics(batch);
+  //       } catch (e) {
+  //         console.error('failed to send preaggregated batch', e);
+  //       }
+  //       yield;
+  //     }
+  //   });
+  //
+  //   return preaggregatedFactory;
+  // }
 }

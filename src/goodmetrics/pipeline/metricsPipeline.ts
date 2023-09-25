@@ -1,3 +1,3 @@
 export interface MetricsPipeline<T> {
-  consume(): AsyncGenerator<T, void, void>;
+  consume(): Generator<T, void, void>;
 }

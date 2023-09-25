@@ -61,7 +61,9 @@ export class MetricsFactory {
     let timestamp: number;
     switch (stampAt) {
       case TimestampAt.Start:
-        timestamp = performance.now();
+        // This needs to be Date.now() since this is the epoch time at which
+        // the metric is starting
+        timestamp = Date.now();
         break;
       case TimestampAt.End:
         timestamp = -1;
@@ -71,7 +73,6 @@ export class MetricsFactory {
     return new _Metrics({
       name,
       timestampMillis: timestamp,
-      startMilliTime: performance.now(),
       metricsBehavior,
     });
   }
@@ -100,7 +101,7 @@ export class MetricsFactory {
       const res = await block(metrics);
       return res;
     } finally {
-      this.emit(metrics);
+      await this.emit(metrics);
     }
   }
 
@@ -108,22 +109,25 @@ export class MetricsFactory {
    * Complete and release a Metrics to the configured downstream sink.
    * If you don't emit() the metrics it will never show up downstream.
    */
-  private emit(metrics: _Metrics) {
+  private async emit(metrics: _Metrics) {
     this.finalizeMetrics(metrics);
-    this.metricsSink.emit(metrics);
+    await this.metricsSink.emit(metrics);
   }
 
   private finalizeMetrics(metrics: _Metrics) {
     if (metrics.timestampMillis < 1) {
-      metrics.timestampMillis = performance.now();
+      // this needs to be Date.now() because its the unix timestamp at which the
+      // metric ended
+      metrics.timestampMillis = Date.now();
     }
     if (metrics.metricsBehavior === MetricsBehavior.NO_TOTALTIME) {
       return;
     }
 
-    const duration = performance.now() - metrics.startMilliTime;
+    const duration = metrics.getDurationMillis();
     switch (this.totalTimeType) {
       case TotaltimeType.DistributionMilliseconds:
+        console.log('total time type distribution milliseconds');
         metrics.distribution('totaltime', duration);
         break;
       case TotaltimeType.MeasurementMilliseconds:
