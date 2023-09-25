@@ -41,6 +41,11 @@ interface LightstepNativeLambdaOtlpProps {
    */
   lightstepPort?: number;
   logError: (message: string, error: unknown) => void;
+  /**
+   * Mostly for debugging purposes, logs after successfully sending metrics to the backend.
+   * Used to tell if the promise fully resolved
+   */
+  doLogSuccess?: boolean;
   onSendUnary?: (metrics: Metrics[]) => void;
 }
 
@@ -181,13 +186,14 @@ export class MetricsSetups {
       close(): void {
         client.close();
       },
-      emit(metrics: _Metrics): void {
+      async emit(metrics: _Metrics): Promise<void> {
         props?.onSendUnary && props.onSendUnary([metrics]);
-        client
-          .sendMetricsBatch([metrics])
-          .catch(e =>
-            props.logError('error while sending blocking metrics', e)
-          );
+        try {
+          await client.sendMetricsBatch([metrics]);
+          props.doLogSuccess && console.log('metrics sent to backend');
+        } catch (e) {
+          props.logError('error while sending blocking metrics', e);
+        }
       },
     };
 
