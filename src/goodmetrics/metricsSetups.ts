@@ -33,10 +33,6 @@ interface LightstepNativeLambdaOtlpProps {
    */
   resourceDimensions: Map<string, Dimension>;
   /**
-   * aggregated batch width in milliseconds
-   */
-  aggregationWidthMillis: number;
-  /**
    * defaults to `ingest.lightstep.com`, the default lightstep ingest url
    */
   lightstepUrl?: string;
@@ -44,14 +40,6 @@ interface LightstepNativeLambdaOtlpProps {
    * defaults to 443, the default lightstep port
    */
   lightstepPort?: number;
-  /**
-   * defaults to SecurityMode.Tls, for use with https
-   */
-  lightstepConnectionSecurityMode?: SecurityMode;
-  /**
-   * timeout for the requests to send metrics to lightsteps backend
-   */
-  timeoutSeconds?: number;
   logError: (message: string, error: unknown) => void;
   onSendUnary?: (metrics: Metrics[]) => void;
 }

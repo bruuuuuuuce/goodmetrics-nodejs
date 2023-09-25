@@ -18,12 +18,11 @@ const main = async () => {
     // metrics setup for recording metrics inside of a lambda
   const lambdaMetrics =
     MetricsSetups.lightstepNativeOtlpButItSendsMetricsUponRecordingForLambda({
-      aggregationWidthMillis: 10 * 1000,
       lightstepAccessToken: '<your lightstep api key>',
       resourceDimensions: new Map<string, Dimension>(),
     });
 
-  await lambdaMetrics.unaryMetricsFactory.record(
+  await lambdaMetrics.record(
     {name: 'test'},
     async metrics => {
       console.info('inside metrics block');

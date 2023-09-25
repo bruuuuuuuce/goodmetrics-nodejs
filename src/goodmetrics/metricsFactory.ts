@@ -61,7 +61,7 @@ export class MetricsFactory {
     let timestamp: number;
     switch (stampAt) {
       case TimestampAt.Start:
-        timestamp = performance.now();
+        timestamp = Date.now();
         break;
       case TimestampAt.End:
         timestamp = -1;
@@ -71,7 +71,6 @@ export class MetricsFactory {
     return new _Metrics({
       name,
       timestampMillis: timestamp,
-      startMilliTime: performance.now(),
       metricsBehavior,
     });
   }
@@ -115,13 +114,13 @@ export class MetricsFactory {
 
   private finalizeMetrics(metrics: _Metrics) {
     if (metrics.timestampMillis < 1) {
-      metrics.timestampMillis = performance.now();
+      metrics.timestampMillis = Date.now();
     }
     if (metrics.metricsBehavior === MetricsBehavior.NO_TOTALTIME) {
       return;
     }
 
-    const duration = performance.now() - metrics.startMilliTime;
+    const duration = metrics.getDurationMillis();
     switch (this.totalTimeType) {
       case TotaltimeType.DistributionMilliseconds:
         metrics.distribution('totaltime', duration);

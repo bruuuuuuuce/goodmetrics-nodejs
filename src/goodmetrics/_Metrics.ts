@@ -9,6 +9,7 @@ import HistogramDataPoint = otlp_metrics.opentelemetry.proto.metrics.v1.Histogra
 import AggregationTemporality = otlp_metrics.opentelemetry.proto.metrics.v1.AggregationTemporality;
 import {newNumberDataPoint} from './data/otlp/numbersDataPoint';
 import {goodmetrics} from 'goodmetrics-generated';
+import {v4} from 'uuid';
 
 export enum MetricsBehavior {
   DEFAULT = 'default',
@@ -112,7 +113,6 @@ class View {
 interface MetricsProps {
   name: string;
   timestampMillis: number;
-  startMilliTime: number;
   metricsBehavior?: MetricsBehavior;
 }
 
@@ -126,23 +126,25 @@ export interface Metrics {
 export class _Metrics implements Metrics {
   readonly name: string;
   timestampMillis: number;
-  readonly startMilliTime: number;
+  private readonly startTimeMillis: number;
   readonly metricsBehavior: MetricsBehavior;
   readonly metricMeasurements: Map<string, number> = new Map();
   readonly metricDistributions: Map<string, number> = new Map();
   readonly metricDimensions: Map<string, Dimension> = new Map();
+  private readonly performanceMark: PerformanceMark;
   constructor(props: MetricsProps) {
+    this.startTimeMillis = Date.now();
     this.name = props.name;
     this.timestampMillis = props.timestampMillis;
-    this.startMilliTime = props.startMilliTime;
     this.metricsBehavior = props.metricsBehavior ?? MetricsBehavior.DEFAULT;
+    this.performanceMark = performance.mark(v4());
   }
 
   getView(): View {
     return new View({
       metricName: this.name,
       timestampMillis: this.timestampMillis,
-      startMilliTime: this.startMilliTime,
+      startMilliTime: this.startTimeMillis,
       measurements: this.metricMeasurements,
       dimensions: this.metricDimensions,
       distributions: this.metricDistributions,
@@ -202,12 +204,8 @@ export class _Metrics implements Metrics {
     bucketCounts.push(0); // otlp go die in a fire
     const dataPoint = new HistogramDataPoint({
       attributes: otlpDimensions,
-      start_time_unix_nano: Math.floor(
-        (this.timestampMillis - (performance.now() - this.startMilliTime)) *
-          1000 *
-          1000
-      ),
-      time_unix_nano: Math.floor(this.timestampMillis * 1000 * 1000),
+      start_time_unix_nano: this.startTimeMillis * 1000 * 1000,
+      time_unix_nano: this.timestampMillis * 1000 * 1000,
       count: 1,
       bucket_counts: bucketCounts,
       explicit_bounds: explicitBounds,
@@ -235,7 +233,7 @@ export class _Metrics implements Metrics {
             newNumberDataPoint(
               value,
               this.timestampMillis,
-              performance.now() - this.startMilliTime,
+              this.mesaureMetricPerformance().duration,
               otlpDimensions
             ),
           ],
@@ -258,5 +256,17 @@ export class _Metrics implements Metrics {
 
   dimensionPosition(): Set<Dimension> {
     return new Set(Array.from(this.metricDimensions.values()));
+  }
+
+  private mesaureMetricPerformance(): PerformanceMeasure {
+    return performance.measure('metric_performance', this.performanceMark.name);
+  }
+
+  getDurationMillis(): number {
+    const perf = performance.measure(
+      'metric_perf_measurement',
+      this.performanceMark.name
+    );
+    return Math.floor(perf.duration);
   }
 }
