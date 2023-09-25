@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.3.1...v0.3.2) (2023-09-25)
+
+
+### Bug Fixes
+
+* properly wait at end to send last batch of metrics ([#18](https://github.com/bruuuuuuuce/goodmetrics-nodejs/issues/18)) ([99c20c7](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/99c20c7e8f623e23e1132cf4205a23989b680bcd))
+
 ## [0.3.1](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.3.0...v0.3.1) (2023-09-25)
 
 
