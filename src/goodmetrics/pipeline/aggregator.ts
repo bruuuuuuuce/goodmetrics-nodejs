@@ -204,7 +204,7 @@ export class Aggregator
   private lastEmit: number;
 
   constructor(props: AggregatorProps) {
-    const now = performance.now();
+    const now = Date.now();
     this.aggregationWidthMillis = props.aggregationWidthMillis ?? 10 * 1000;
     this.lastEmit = now - (now % this.aggregationWidthMillis);
     this.currentBatch = new Map();
@@ -232,7 +232,7 @@ export class Aggregator
       // epoch time at which we will next emit metrics
       const nextEmit = this.lastEmit + this.aggregationWidthMillis;
       // difference between now and when we will next emit metrics, should be negative
-      const timeToNextEmit = performance.now() - nextEmit;
+      const timeToNextEmit = Date.now() - nextEmit;
       this.lastEmit += this.aggregationWidthMillis;
       if (timeToNextEmit > 0 || this.aggregationWidthMillis < -timeToNextEmit) {
         // Skip a time column because of sadness.
