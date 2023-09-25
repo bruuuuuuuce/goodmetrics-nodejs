@@ -274,7 +274,7 @@ export class Aggregator
       if (!metricPositions.has(position)) {
         metricPositions.set(position, new Map());
       }
-      if (metricPositions.get(position)!.has(name)) {
+      if (!metricPositions.get(position)!.has(name)) {
         metricPositions.get(position)!.set(name, new StatisticSet({}));
       }
       const ss = metricPositions.get(position)!.get(name)!;
@@ -285,7 +285,7 @@ export class Aggregator
       if (!metricPositions.has(position)) {
         metricPositions.set(position, new Map());
       }
-      if (metricPositions.get(position)!.has(name)) {
+      if (!metricPositions.get(position)!.has(name)) {
         metricPositions.get(position)!.set(name, new Histogram());
       }
       const histogram = metricPositions.get(position)!.get(name)!;
