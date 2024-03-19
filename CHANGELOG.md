@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.3.2...v0.4.0) (2024-03-19)
+
+
+### Features
+
+* bump grpc js to version 1.10.0 ([#22](https://github.com/bruuuuuuuce/goodmetrics-nodejs/issues/22)) ([e75bbbc](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/e75bbbc491568f5655ca410e8c17461a0f6db381))
+
 ## [0.3.2](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.3.1...v0.3.2) (2023-09-25)
 
 
