@@ -36,10 +36,10 @@
   },
   "dependencies": {
     "@grpc/grpc-js": "1.10.0",
-    "goodmetrics-generated": "0.0.3",
+    "goodmetrics-generated": "0.1.0",
     "google-protobuf": "3.21.2",
     "js-csp": "^1.0.1",
-    "otlp-generated": "0.0.7",
+    "otlp-generated": "0.1.0",
     "uuid": "^9.0.1"
   },
   "engines": {
