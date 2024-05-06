@@ -127,7 +127,9 @@ export class MetricsSetups {
         props.resourceDimensions ?? new Map<string, Dimension>(),
       ingestPort: props.lightstepPort ?? 443,
       ingestUrl: props.lightstepUrl ?? 'ingest.lightstep.com',
-      headers: [new Header('lightstep-access-token', props.lightstepAccessToken)],
+      headers: [
+        new Header('lightstep-access-token', props.lightstepAccessToken),
+      ],
     });
 
     const unarySink = this.configureBatchedUnaryLightstepSink({
