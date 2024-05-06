@@ -67,9 +67,9 @@ interface ConfigureBatchedPreaggregatedLightstepSinkProps {
 }
 
 interface PrivateOtelClientProps {
-  lightstepToken: string;
-  lightstepUrl: string;
-  lightstepPort: number;
+  headers: Header[];
+  ingestUrl: string;
+  ingestPort: number;
   metricDimensions: Map<string, Dimension>;
   resourceDimensions: Map<string, Dimension>;
 }
@@ -125,9 +125,11 @@ export class MetricsSetups {
       metricDimensions: props.metricDimensions ?? new Map<string, Dimension>(),
       resourceDimensions:
         props.resourceDimensions ?? new Map<string, Dimension>(),
-      lightstepToken: props.lightstepAccessToken,
-      lightstepPort: props.lightstepPort ?? 443,
-      lightstepUrl: props.lightstepUrl ?? 'ingest.lightstep.com',
+      ingestPort: props.lightstepPort ?? 443,
+      ingestUrl: props.lightstepUrl ?? 'ingest.lightstep.com',
+      headers: [
+        new Header('lightstep-access-token', props.lightstepAccessToken),
+      ],
     });
 
     const unarySink = this.configureBatchedUnaryLightstepSink({
@@ -267,15 +269,13 @@ export class MetricsSetups {
     return sink;
   }
 
-  private static opentelemetryClient(
+  static opentelemetryClient(
     props: PrivateOtelClientProps
   ): OpenTelemetryClient {
-    const headers = [
-      new Header('lightstep-access-token', props.lightstepToken),
-    ];
+    const headers = props.headers;
     return OpenTelemetryClient.connect({
-      sillyOtlpHostname: props.lightstepUrl ?? 'ingest.lightstep.com',
-      port: props.lightstepPort ?? 443,
+      sillyOtlpHostname: props.ingestUrl,
+      port: props.ingestPort,
       metricDimensions: props.metricDimensions ?? new Map<string, Dimension>(),
       resourceDimensions:
         props.resourceDimensions ?? new Map<string, Dimension>(),
