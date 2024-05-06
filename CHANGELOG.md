@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.4.0...v0.4.1) (2024-05-06)
+
+
+### Bug Fixes
+
+* make openTelemetryClient generic not lightstep specific ([#24](https://github.com/bruuuuuuuce/goodmetrics-nodejs/issues/24)) ([251d7fc](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/251d7fc1e5b6b4c90faa53e9edba0accd63763a7))
+
 ## [0.4.0](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.3.2...v0.4.0) (2024-03-19)
 
 
