@@ -67,8 +67,10 @@ interface ConfigureBatchedPreaggregatedLightstepSinkProps {
 }
 
 interface PrivateOtelClientProps {
-  authToken: string;
-  authHeaderName: string;
+  headers: {
+    authToken: string;
+    authHeaderName: string;
+  };
   ingestUrl: string;
   ingestPort: number;
   metricDimensions: Map<string, Dimension>;
@@ -120,16 +122,18 @@ export class MetricsSetups {
     };
   }
   static lightstepNativeOtlp(
-      props: LightstepNativeOtlpProps
+    props: LightstepNativeOtlpProps
   ): ConfiguredMetrics {
     const client = this.opentelemetryClient({
       metricDimensions: props.metricDimensions ?? new Map<string, Dimension>(),
       resourceDimensions:
-          props.resourceDimensions ?? new Map<string, Dimension>(),
-      authToken: props.lightstepAccessToken,
+        props.resourceDimensions ?? new Map<string, Dimension>(),
       ingestPort: props.lightstepPort ?? 443,
       ingestUrl: props.lightstepUrl ?? 'ingest.lightstep.com',
-      authHeaderName: 'lightstep-access-token',
+      headers: {
+        authToken: props.lightstepAccessToken,
+        authHeaderName: 'lightstep-access-token',
+      },
     });
 
     const unarySink = this.configureBatchedUnaryLightstepSink({
@@ -170,7 +174,7 @@ export class MetricsSetups {
    * @param props
    */
   static lightstepNativeOtlpButItSendsMetricsUponRecordingForLambda(
-      props: LightstepNativeLambdaOtlpProps
+    props: LightstepNativeLambdaOtlpProps
   ): MetricsFactory {
     const headers = [
       new Header('lightstep-access-token', props.lightstepAccessToken),
@@ -206,7 +210,7 @@ export class MetricsSetups {
   }
 
   private static configureBatchedUnaryLightstepSink(
-      props: ConfigureBatchedUnaryLightstepSinkProps
+    props: ConfigureBatchedUnaryLightstepSinkProps
   ): SynchronizingBuffer {
     const unarySink = new SynchronizingBuffer();
     const unaryBatcher = new Batcher({
@@ -237,7 +241,7 @@ export class MetricsSetups {
   }
 
   private static configureBatchedPreaggregatedLightstepSink(
-      props: ConfigureBatchedPreaggregatedLightstepSinkProps
+    props: ConfigureBatchedPreaggregatedLightstepSinkProps
   ): Aggregator {
     const sink = new Aggregator({
       aggregationWidthMillis: props.aggregationWidthMillis,
@@ -270,15 +274,17 @@ export class MetricsSetups {
   }
 
   static opentelemetryClient(
-      props: PrivateOtelClientProps
+    props: PrivateOtelClientProps
   ): OpenTelemetryClient {
-    const headers = [new Header(props.authHeaderName, props.authToken)];
+    const headers = [
+      new Header(props.headers.authHeaderName, props.headers.authToken),
+    ];
     return OpenTelemetryClient.connect({
       sillyOtlpHostname: props.ingestUrl,
       port: props.ingestPort,
       metricDimensions: props.metricDimensions ?? new Map<string, Dimension>(),
       resourceDimensions:
-          props.resourceDimensions ?? new Map<string, Dimension>(),
+        props.resourceDimensions ?? new Map<string, Dimension>(),
       interceptors: [
         new HeaderInterceptorProvider(headers).createHeadersInterceptor(),
       ],
