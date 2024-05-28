@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.4.1...v0.5.0) (2024-05-28)
+
+
+### Features
+
+* add support for pointing lambda metrics to generic downstream o… ([#26](https://github.com/bruuuuuuuce/goodmetrics-nodejs/issues/26)) ([78a7056](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/78a70568d83a48c7d0d84a83fdcd8539875f2a67))
+
 ## [0.4.1](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.4.0...v0.4.1) (2024-05-06)
 
 
