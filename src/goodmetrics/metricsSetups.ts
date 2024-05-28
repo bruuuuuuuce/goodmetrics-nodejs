@@ -49,6 +49,41 @@ interface LightstepNativeLambdaOtlpProps {
   onSendUnary?: (metrics: Metrics[]) => void;
 }
 
+interface RawNativeLambdaOtlpForLambdaProps {
+  /**
+   * programmatic access token for the otlp metric backend
+   */
+  accessToken: string;
+  /**
+   * Name of the header to use for authentication. Ex. `api-token`
+   */
+  authHeaderName: string;
+  /**
+   * Included resource dimensions on the OTLP resource. Ex. AWS_REGION, ACCOUNT_ID etc...
+   */
+  resourceDimensions: Map<string, Dimension>;
+  /**
+   * Include resource dimensions on each metric instead of on the Resource. You'd use this for
+   * downstreams that either do not support or do something undesirable with Resource dimensions.
+   */
+  sharedDimensions: Map<string, Dimension>;
+  /**
+   * example `ingest.lightstep.com`
+   */
+  ingestUrl: string;
+  /**
+   * defaults to 443
+   */
+  ingestPort?: number;
+  logError: (message: string, error: unknown) => void;
+  /**
+   * Mostly for debugging purposes, logs after successfully sending metrics to the backend.
+   * Used to tell if the promise fully resolved
+   */
+  doLogSuccess?: boolean;
+  onSendUnary?: (metrics: Metrics[]) => void;
+}
+
 interface ConfigureBatchedUnaryLightstepSinkProps {
   batchSize: number;
   batchMaxAgeSeconds: number;
@@ -165,7 +200,7 @@ export class MetricsSetups {
   }
 
   /**
-   * Configures a unary metric factory which will send and record metrics upon lambda
+   * Configures a unary metric factory pointing to lightstep downstream, which will send and record metrics upon lambda
    * completion
    * @param props
    */
@@ -179,6 +214,47 @@ export class MetricsSetups {
       sillyOtlpHostname: props.lightstepUrl ?? 'ingest.lightstep.com',
       port: props.lightstepPort ?? 443,
       metricDimensions: new Map(),
+      resourceDimensions: props.resourceDimensions,
+      interceptors: [
+        new HeaderInterceptorProvider(headers).createHeadersInterceptor(),
+      ],
+    });
+    const unarySink: MetricsSink = {
+      close(): void {
+        client.close();
+      },
+      async emit(metrics: _Metrics): Promise<void> {
+        props?.onSendUnary && props.onSendUnary([metrics]);
+        try {
+          await client.sendMetricsBatch([metrics]);
+          props.doLogSuccess && console.log('metrics sent to backend');
+        } catch (e) {
+          props.logError('error while sending blocking metrics', e);
+        }
+      },
+    };
+
+    return new MetricsFactory({
+      metricsSink: unarySink,
+      totalTimeType: TotaltimeType.DistributionMilliseconds,
+    });
+  }
+
+  /**
+   * Configures a unary metric factory pointing to any arbitrary oltp metrics backend, which will send and record metrics upon lambda
+   * completion
+   * @param props
+   */
+  static rawNativeOtlpButItSendsMetricsUponRecordingForLambda(
+    props: RawNativeLambdaOtlpForLambdaProps
+  ): MetricsFactory {
+    const headers = [
+      new Header(props.authHeaderName, props.accessToken),
+    ];
+    const client = OpenTelemetryClient.connect({
+      sillyOtlpHostname: props.ingestUrl,
+      port: props.ingestPort ?? 443,
+      metricDimensions: props.sharedDimensions,
       resourceDimensions: props.resourceDimensions,
       interceptors: [
         new HeaderInterceptorProvider(headers).createHeadersInterceptor(),
