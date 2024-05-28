@@ -248,9 +248,7 @@ export class MetricsSetups {
   static rawNativeOtlpButItSendsMetricsUponRecordingForLambda(
     props: RawNativeLambdaOtlpForLambdaProps
   ): MetricsFactory {
-    const headers = [
-      new Header(props.authHeaderName, props.accessToken),
-    ];
+    const headers = [new Header(props.authHeaderName, props.accessToken)];
     const client = OpenTelemetryClient.connect({
       sillyOtlpHostname: props.ingestUrl,
       port: props.ingestPort ?? 443,
