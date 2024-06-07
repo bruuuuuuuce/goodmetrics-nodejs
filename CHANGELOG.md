@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.5.0...v0.6.0) (2024-06-07)
+
+
+### Features
+
+* semver grpc-js and override core-js ([#32](https://github.com/bruuuuuuuce/goodmetrics-nodejs/issues/32)) ([84cac3e](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/84cac3e5ec5893a2b2a9199b5fc471e6c6139110))
+
 ## [0.5.0](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.4.1...v0.5.0) (2024-05-28)
 
 
