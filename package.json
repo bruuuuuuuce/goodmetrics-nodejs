@@ -43,7 +43,8 @@
     "uuid": "^9.0.1"
   },
   "overrides": {
-    "@grpc/grpc-js": "1.10.8"
+    "@grpc/grpc-js": "1.10.8",
+    "core-js": "3.37.1"
   },
   "engines": {
     "node": ">=16.0.0"
