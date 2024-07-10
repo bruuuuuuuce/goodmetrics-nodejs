@@ -69,21 +69,21 @@ class Logger {
     }
   }
 
-  debug(message: string): void {
+  debug(message: string, additionalContext?: {[key: string]: unknown}): void {
     if (this.level >= DEBUG_LEVEL) {
-      console.debug(message);
+      console.debug(message, additionalContext);
     }
   }
 
-  info(message: string): void {
+  info(message: string, additionalContext?: {[key: string]: unknown}): void {
     if (this.level >= INFO_LEVEL) {
-      console.info(message);
+      console.info(message, additionalContext);
     }
   }
 
-  error(message: string): void {
+  error(message: string, additionalContext?: {[key: string]: unknown}): void {
     if (this.level >= ERROR_LEVEL) {
-      console.error(message);
+      console.error(message, additionalContext);
     }
   }
 }
@@ -157,8 +157,7 @@ export class MetricsFactory {
    */
   private async emit(metrics: _Metrics) {
     this.finalizeMetrics(metrics);
-    this.logger.debug('metrics finalized');
-    console.log('metrics', metrics);
+    this.logger.debug('metrics finalized', {metrics});
     await this.metricsSink.emit(metrics);
   }
 
