@@ -26,9 +26,12 @@ export enum TotaltimeType {
   None = 'none',
 }
 
+export type LogLevel = 'none' | 'debug' | 'info' | 'error';
+
 interface Props {
   metricsSink: MetricsSink;
   totalTimeType: TotaltimeType;
+  logLevel?: LogLevel;
 }
 
 interface RecordOptions {
@@ -42,12 +45,57 @@ interface RecordWithBehaviorOptions {
   behavior: MetricsBehavior;
 }
 
+const NONE_LEVEL = 0;
+const DEBUG_LEVEL = 1;
+const INFO_LEVEL = 2;
+const ERROR_LEVEL = 3;
+
+class Logger {
+  private readonly level: number;
+  constructor(level: LogLevel) {
+    switch (level) {
+      case 'none':
+        this.level = NONE_LEVEL;
+        break;
+      case 'debug':
+        this.level = DEBUG_LEVEL;
+        break;
+      case 'info':
+        this.level = INFO_LEVEL;
+        break;
+      case 'error':
+        this.level = ERROR_LEVEL;
+        break;
+    }
+  }
+
+  debug(message: string): void {
+    if (this.level >= DEBUG_LEVEL) {
+      console.debug(message);
+    }
+  }
+
+  info(message: string): void {
+    if (this.level >= INFO_LEVEL) {
+      console.info(message);
+    }
+  }
+
+  error(message: string): void {
+    if (this.level >= ERROR_LEVEL) {
+      console.error(message);
+    }
+  }
+}
+
 export class MetricsFactory {
   protected readonly metricsSink: MetricsSink;
   private readonly totalTimeType: TotaltimeType;
+  private readonly logger: Logger;
   constructor(props: Props) {
     this.metricsSink = props.metricsSink;
     this.totalTimeType = props.totalTimeType;
+    this.logger = new Logger(props.logLevel ?? 'none');
   }
 
   /**
@@ -109,26 +157,33 @@ export class MetricsFactory {
    */
   private async emit(metrics: _Metrics) {
     this.finalizeMetrics(metrics);
+    this.logger.debug('metrics finalized');
+    console.log('metrics', metrics);
     await this.metricsSink.emit(metrics);
   }
 
   private finalizeMetrics(metrics: _Metrics) {
+    this.logger.debug('finalizing metrics');
     if (metrics.timestampMillis < 1) {
       metrics.timestampMillis = Date.now();
     }
     if (metrics.metricsBehavior === MetricsBehavior.NO_TOTALTIME) {
+      this.logger.debug('no total time being recorded');
       return;
     }
 
     const duration = metrics.getDurationMillis();
     switch (this.totalTimeType) {
       case TotaltimeType.DistributionMilliseconds:
+        this.logger.debug(`distribution milliseconds, duration: ${duration}`);
         metrics.distribution('totaltime', duration);
         break;
       case TotaltimeType.MeasurementMilliseconds:
+        this.logger.debug(`measurement milliseconds, duration: ${duration}`);
         metrics.measure('totaltime', duration);
         break;
       case TotaltimeType.None:
+        this.logger.debug(`totaltime.none, duration: ${duration}`);
         break;
     }
   }

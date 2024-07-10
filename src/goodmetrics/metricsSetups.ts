@@ -1,4 +1,4 @@
-import {MetricsFactory, TotaltimeType} from './metricsFactory';
+import {LogLevel, MetricsFactory, TotaltimeType} from './metricsFactory';
 import {_Metrics, Dimension, Metrics} from './_Metrics';
 import {
   OpenTelemetryClient,
@@ -47,6 +47,7 @@ interface LightstepNativeLambdaOtlpProps {
    */
   doLogSuccess?: boolean;
   onSendUnary?: (metrics: Metrics[]) => void;
+  logLevel?: LogLevel;
 }
 
 interface RawNativeLambdaOtlpForLambdaProps {
@@ -82,6 +83,7 @@ interface RawNativeLambdaOtlpForLambdaProps {
    */
   doLogSuccess?: boolean;
   onSendUnary?: (metrics: Metrics[]) => void;
+  logLevel?: LogLevel;
 }
 
 interface ConfigureBatchedUnaryLightstepSinkProps {
@@ -125,6 +127,7 @@ interface LightstepNativeOtlpProps {
   preaggregatedBatchMaxAgeSeconds?: number;
   onSendUnary?: (metrics: Metrics[]) => void;
   onSendPreaggregated?: (aggregatedBatch: AggregatedBatch[]) => void;
+  logLevel?: LogLevel;
 }
 
 interface GoodmetricsSetupProps {
@@ -186,11 +189,13 @@ export class MetricsSetups {
     const unaryMetricsFactory = new MetricsFactory({
       metricsSink: unarySink,
       totalTimeType: TotaltimeType.DistributionMilliseconds,
+      logLevel: props.logLevel,
     });
 
     const preaggregatedMetricsFactory = new MetricsFactory({
       metricsSink: preaggregatedSink,
       totalTimeType: TotaltimeType.DistributionMilliseconds,
+      logLevel: props.logLevel,
     });
 
     return {
@@ -237,6 +242,7 @@ export class MetricsSetups {
     return new MetricsFactory({
       metricsSink: unarySink,
       totalTimeType: TotaltimeType.DistributionMilliseconds,
+      logLevel: props.logLevel,
     });
   }
 
@@ -275,7 +281,8 @@ export class MetricsSetups {
 
     return new MetricsFactory({
       metricsSink: unarySink,
-      totalTimeType: TotaltimeType.DistributionMilliseconds,
+      totalTimeType: TotaltimeType.MeasurementMilliseconds,
+      logLevel: props.logLevel,
     });
   }
 
