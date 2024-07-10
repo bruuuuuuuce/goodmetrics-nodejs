@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.6.0...v0.7.0) (2024-07-10)
+
+
+### Features
+
+* add debug logger, fix raw otel totaltime measurement ([#34](https://github.com/bruuuuuuuce/goodmetrics-nodejs/issues/34)) ([c51d078](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/c51d0784b7ede1bd394c54929db9537bc6bb766b))
+
 ## [0.6.0](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.5.0...v0.6.0) (2024-06-07)
 
 
