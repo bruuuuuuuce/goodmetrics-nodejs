@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.7.0...v0.8.0) (2024-07-11)
+
+
+### Features
+
+* bump the build ([c5c627a](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/c5c627a04d68dd0251a9cdcb3698c4086d059437))
+
 ## [0.7.0](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.6.0...v0.7.0) (2024-07-10)
 
 

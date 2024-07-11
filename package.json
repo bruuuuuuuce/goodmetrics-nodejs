@@ -49,5 +49,5 @@
     "core-js": "3.37.1"
   },
   "name": "goodmetrics-nodejs",
-  "version": "0.7.0"
+  "version": "0.8.0"
 }
