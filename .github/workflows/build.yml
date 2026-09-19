@@ -23,5 +23,20 @@ jobs:
         run: npm test
       - name: Integration tests
         run: npm run integration
+      - name: Cache LocalStack image
+        id: cache-localstack-image
+        uses: actions/cache@v6
+        with:
+          path: /tmp/docker-cache/localstack.tar
+          key: docker-localstack-${{ hashFiles('test/lambda-e2e/docker-compose.yml') }}
+      - name: Load cached LocalStack image
+        if: steps.cache-localstack-image.outputs.cache-hit == 'true'
+        run: docker load -i /tmp/docker-cache/localstack.tar
+      - name: Pull and cache LocalStack image
+        if: steps.cache-localstack-image.outputs.cache-hit != 'true'
+        run: |
+          docker pull localstack/localstack:4
+          mkdir -p /tmp/docker-cache
+          docker save localstack/localstack:4 -o /tmp/docker-cache/localstack.tar
       - name: Lambda e2e test (LocalStack)
         run: bash test/lambda-e2e/run.sh
