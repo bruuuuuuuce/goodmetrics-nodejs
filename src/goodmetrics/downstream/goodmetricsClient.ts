@@ -4,13 +4,21 @@ import MetricsClient = goodmetrics.MetricsClient;
 import {ChannelCredentials, Interceptor} from '@grpc/grpc-js';
 import MetricsRequest = goodmetrics.MetricsRequest;
 import {AggregatedBatch} from '../pipeline/aggregator';
+import {SecurityMode} from './openTelemetryClient';
 
 interface GoodmetricsClientProps {
   address: string;
+  channelCredentials: ChannelCredentials;
 }
 interface GoodmetricsConnectProps {
   hostname: string;
   port: number;
+  /**
+   * defaults to `SecurityMode.Tls`. Use `SecurityMode.Plaintext` to connect to a local/dev
+   * goodmetrics server that doesn't terminate TLS (e.g. the `localhost:9573` default used by
+   * `MetricsSetups.goodMetrics()`).
+   */
+  securityMode?: SecurityMode;
 }
 
 export class GoodmetricsClient {
@@ -18,17 +26,25 @@ export class GoodmetricsClient {
   private readonly client: MetricsClient;
   private readonly interceptors: Interceptor[];
   private constructor(props: GoodmetricsClientProps) {
-    this.client = new MetricsClient(
-      props.address,
-      ChannelCredentials.createSsl()
-    );
+    this.client = new MetricsClient(props.address, props.channelCredentials);
     this.prescientDimensions = new Map<string, Dimension>();
     this.interceptors = [];
   }
 
   static connect(props: GoodmetricsConnectProps): GoodmetricsClient {
+    let channelCredentials: ChannelCredentials;
+    switch (props.securityMode) {
+      case SecurityMode.Plaintext:
+        channelCredentials = ChannelCredentials.createInsecure();
+        break;
+      case SecurityMode.Tls:
+      default:
+        channelCredentials = ChannelCredentials.createSsl();
+        break;
+    }
     return new GoodmetricsClient({
       address: `${props.hostname}:${props.port}`,
+      channelCredentials,
     });
   }
 
