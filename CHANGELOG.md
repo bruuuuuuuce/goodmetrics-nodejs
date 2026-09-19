@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.10.0](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.9.1...v0.10.0) (2026-09-19)
+
+
+### Features
+
+* add e2e test for GoodmetricsClient, fix uuid runtime crash ([#68](https://github.com/bruuuuuuuce/goodmetrics-nodejs/issues/68)) ([5ef2e6f](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/5ef2e6fa83fb3f3681d03bddf04d00d66cf47c3a))
+
+
+### Bug Fixes
+
+* bump goodmetrics-generated to 0.1.3 ([#72](https://github.com/bruuuuuuuce/goodmetrics-nodejs/issues/72)) ([986c37b](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/986c37b03a0fa5b8dd790bb032f48a9f86105e67))
+* bump otlp-generated to 0.1.3 ([#66](https://github.com/bruuuuuuuce/goodmetrics-nodejs/issues/66)) ([594de39](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/594de39b69abf3bac9583416c93a64085e3decfc))
+* migrate to ESLint 9 flat config, bump Jest to 30 (kills all remaining install-time warnings but two) ([#74](https://github.com/bruuuuuuuce/goodmetrics-nodejs/issues/74)) ([c6ecb22](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/c6ecb22af8dfd9125b84a8738979238cddc987cc))
+* pin core-js in lambda handler bundle, document a branch-push gotcha ([#75](https://github.com/bruuuuuuuce/goodmetrics-nodejs/issues/75)) ([cef68a5](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/cef68a5c36a982eea4b4e75ae4a8f4dfab5d3201))
+* resolve all existing lint warnings and tighten their rules ([#73](https://github.com/bruuuuuuuce/goodmetrics-nodejs/issues/73)) ([057b620](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/057b62036c3159d3714e326c731cf939a8ec3ae4))
+
 ## [0.9.1](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.9.0...v0.9.1) (2026-09-19)
 
 
