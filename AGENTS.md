@@ -60,6 +60,14 @@ Always create a feature branch and open a pull request — never commit directly
 for a one-line fix or a docs-only change. There are no exceptions for small or "trivial" changes.
 This applies to AI coding agents exactly as it does to human contributors.
 
+Before pushing to an existing branch name — especially one you're treating as "add a commit to
+an already-open PR" — verify it's actually still open first (e.g. `gh pr view <number> --json
+state,mergedAt`, or `git ls-remote --heads origin <branch>`). This repo auto-deletes a branch
+once its PR merges. Pushing to that now-deleted name doesn't reopen or add to the merged PR — it
+silently creates a fresh, disconnected branch with the same name, and whatever you push there has
+no PR at all until you notice and open one. This has actually happened here; always start a new
+branch off latest `main` unless you've just confirmed the target branch/PR is still open.
+
 ## Release / publish gotchas
 
 - `package.json`'s `version` field is managed by release-please via its release PRs — don't hand-edit it.
