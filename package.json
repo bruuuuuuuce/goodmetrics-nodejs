@@ -7,6 +7,10 @@
     "dev-driver": "ts-node --prefer-ts-exts test/dev-driver.ts"
   },
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bruuuuuuuce/goodmetrics-nodejs.git"
+  },
   "main": "dist/src/index.js",
   "files": [
     "dist/src",
