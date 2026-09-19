@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.8.0...v0.9.0) (2026-09-19)
+
+
+### Features
+
+* bump minor release version ([#61](https://github.com/bruuuuuuuce/goodmetrics-nodejs/issues/61)) ([795a260](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/795a260a71a25337cc0db23f0e6226d29a5b88d5))
+
 ## [0.8.0](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.7.0...v0.8.0) (2026-09-19)
 
 
