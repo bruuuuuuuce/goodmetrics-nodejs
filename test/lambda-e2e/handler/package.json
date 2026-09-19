@@ -2,5 +2,12 @@
   "name": "lambda-e2e-handler",
   "private": true,
   "version": "0.0.0",
-  "main": "handler.js"
+  "main": "handler.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "typescript": "^5.9.3"
+  }
 }

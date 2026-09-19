@@ -25,6 +25,7 @@
       "test"
     ],
     "exclude": [
-      "dist"
+      "dist",
+      "test/lambda-e2e"
     ]
   }

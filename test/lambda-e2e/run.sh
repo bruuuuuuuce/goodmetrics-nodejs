@@ -36,9 +36,15 @@ PACK_NAME="$(npm pack --silent --pack-destination "$SCRIPT_DIR")"
 
 echo "--- preparing lambda handler bundle ---"
 HANDLER_DIR="$SCRIPT_DIR/handler"
-rm -rf "$HANDLER_DIR/node_modules" "$SCRIPT_DIR/handler.zip"
-(cd "$HANDLER_DIR" && npm install --no-save --no-package-lock --omit=dev --registry https://registry.npmjs.org/ "../$PACK_NAME")
-(cd "$HANDLER_DIR" && zip -r -q "$SCRIPT_DIR/handler.zip" . -x 'node_modules/.package-lock.json')
+rm -rf "$HANDLER_DIR/node_modules" "$HANDLER_DIR/handler.js" "$SCRIPT_DIR/handler.zip"
+(cd "$HANDLER_DIR" && npm install --no-save --no-package-lock --registry https://registry.npmjs.org/ "../$PACK_NAME")
+(cd "$HANDLER_DIR" && npm run build)
+# Exclude devDependencies (typescript, @types/*) rather than `npm prune --omit=dev`: since
+# goodmetrics-nodejs was installed with --no-save, package.json never records it as a real
+# dependency, so prune treats it as extraneous and deletes it right along with the dev deps.
+(cd "$HANDLER_DIR" && zip -r -q "$SCRIPT_DIR/handler.zip" . \
+  -x 'node_modules/.package-lock.json' '*.ts' 'tsconfig.json' \
+  'node_modules/typescript/*' 'node_modules/.bin/tsc' 'node_modules/@types/*')
 
 echo "--- starting localstack + fake collector ---"
 docker compose -f "$COMPOSE_FILE" up -d --build --wait

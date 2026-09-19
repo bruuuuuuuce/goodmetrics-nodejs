@@ -1,8 +1,8 @@
-'use strict';
-
-const grpc = require('@grpc/grpc-js');
-const http = require('http');
-const {otlp_metric_service} = require('otlp-generated');
+import * as grpc from '@grpc/grpc-js';
+import * as http from 'http';
+import {otlp_common, otlp_metric_service} from 'otlp-generated';
+import ExportMetricsServiceRequest = otlp_metric_service.opentelemetry.proto.collector.metrics.v1.ExportMetricsServiceRequest;
+import KeyValue = otlp_common.opentelemetry.proto.common.v1.KeyValue;
 
 const {
   UnimplementedMetricsServiceService,
@@ -12,11 +12,17 @@ const {
 const GRPC_PORT = process.env.GRPC_PORT || '4317';
 const HTTP_PORT = process.env.HTTP_PORT || '8080';
 
-/** @type {Array<{name: string, resourceAttributes: Record<string, unknown>}>} */
-const received = [];
+interface ReceivedMetric {
+  name: string;
+  resourceAttributes: Record<string, string | number | boolean | null>;
+}
 
-function flattenAttributes(attributes) {
-  const out = {};
+const received: ReceivedMetric[] = [];
+
+function flattenAttributes(
+  attributes: KeyValue[]
+): Record<string, string | number | boolean | null> {
+  const out: Record<string, string | number | boolean | null> = {};
   for (const attr of attributes) {
     const value = attr.value;
     out[attr.key] =
@@ -29,7 +35,13 @@ function flattenAttributes(attributes) {
   return out;
 }
 
-function handleExport(call, callback) {
+function handleExport(
+  call: grpc.ServerUnaryCall<
+    ExportMetricsServiceRequest,
+    InstanceType<typeof ExportMetricsServiceResponse>
+  >,
+  callback: grpc.sendUnaryData<InstanceType<typeof ExportMetricsServiceResponse>>
+): void {
   const request = call.request;
   for (const resourceMetrics of request.resource_metrics) {
     const resourceAttributes = flattenAttributes(
@@ -77,6 +89,8 @@ const httpServer = http.createServer((req, res) => {
   res.end();
 });
 
-httpServer.listen(HTTP_PORT, () => {
-  console.log(`fake OTLP collector query endpoint listening (HTTP) on :${HTTP_PORT}`);
+httpServer.listen(Number(HTTP_PORT), () => {
+  console.log(
+    `fake OTLP collector query endpoint listening (HTTP) on :${HTTP_PORT}`
+  );
 });

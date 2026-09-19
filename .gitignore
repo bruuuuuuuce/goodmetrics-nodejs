@@ -1,7 +1,5 @@
 *.js
 !jest.config.js
-!test/lambda-e2e/handler/handler.js
-!test/lambda-e2e/collector/server.js
 *.d.ts
 **/node_modules/**/*
 .idea

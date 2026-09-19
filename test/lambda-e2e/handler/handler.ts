@@ -1,8 +1,9 @@
-'use strict';
+import {MetricsSetups, SecurityMode} from 'goodmetrics-nodejs';
 
-const {MetricsSetups, SecurityMode} = require('goodmetrics-nodejs');
-
-exports.handler = async () => {
+export const handler = async (): Promise<{
+  statusCode: number;
+  body: string;
+}> => {
   const metricsFactory =
     MetricsSetups.lightstepNativeOtlpButItSendsMetricsUponRecordingForLambda({
       lightstepAccessToken: 'unused-in-this-test',
@@ -11,7 +12,7 @@ exports.handler = async () => {
       lightstepConnectionSecurityMode: SecurityMode.Plaintext,
       resourceDimensions: new Map(),
       doLogSuccess: true,
-      logError(message, error) {
+      logError(message: string, error: unknown): void {
         console.error(message, error);
       },
     });
