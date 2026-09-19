@@ -9,7 +9,7 @@ export class CancellationToken {
 
   public promise = new Promise(res => (this._res = res));
 
-  public cancel() {
+  public cancel(): void {
     this._res(CancellationToken.CANCEL);
     this.cancelled = true;
   }

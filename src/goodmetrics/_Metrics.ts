@@ -151,7 +151,7 @@ export class _Metrics implements Metrics {
     });
   }
 
-  dimension(dimension: string, value: boolean | number | string) {
+  dimension(dimension: string, value: boolean | number | string): void {
     if (typeof value === 'boolean') {
       const d = new BooleanDimension(dimension, value);
       this.metricDimensions.set(dimension, d);
@@ -164,7 +164,7 @@ export class _Metrics implements Metrics {
     }
   }
 
-  measure(name: string, value: number) {
+  measure(name: string, value: number): void {
     this.metricMeasurements.set(name, value);
   }
 
@@ -172,7 +172,7 @@ export class _Metrics implements Metrics {
    * Distributions are positive only.
    * This only records 1 position of a distribution per Metrics lifetime.
    */
-  distribution(name: string, value: number) {
+  distribution(name: string, value: number): void {
     if (value < 0) {
       return;
     }

@@ -34,6 +34,19 @@
         "prefer-arrow-callback": "error",
         "no-trailing-spaces": "error",
         "@typescript-eslint/switch-exhaustiveness-check": "error",
+        // A leading underscore is this codebase's convention for a required-but-intentionally-
+        // unused parameter (e.g. Map.forEach's key when only the value is needed).
+        "@typescript-eslint/no-unused-vars": [
+            "warn",
+            {"argsIgnorePattern": "^_", "varsIgnorePattern": "^_"}
+        ],
+        // Promoted from the default warning to an error: the codebase no longer has any
+        // non-null assertions (the prior ones in aggregator.ts were restructured to a
+        // get-or-create pattern instead), so keep new ones from creeping back in.
+        "@typescript-eslint/no-non-null-assertion": "error",
+        // Same reasoning: every public method now has an explicit return type, so keep it
+        // enforced rather than defaulting to a warning.
+        "@typescript-eslint/explicit-module-boundary-types": "error",
         "quotes": ["warn", "single", { "avoidEscape": true }],
         "no-restricted-properties": [
             "error",
