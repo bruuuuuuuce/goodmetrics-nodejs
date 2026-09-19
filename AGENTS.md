@@ -54,6 +54,12 @@ Use a scope when it adds clarity (e.g. `fix(pipeline): ...`), but it's optional.
 also follow this format when the PR is squash-merged, since the squash commit message is what
 release-please actually parses.
 
+## Git workflow: never commit to main
+
+Always create a feature branch and open a pull request — never commit directly to `main`, even
+for a one-line fix or a docs-only change. There are no exceptions for small or "trivial" changes.
+This applies to AI coding agents exactly as it does to human contributors.
+
 ## Release / publish gotchas
 
 - `package.json`'s `version` field is managed by release-please via its release PRs — don't hand-edit it.
