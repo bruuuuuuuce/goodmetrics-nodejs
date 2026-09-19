@@ -24,7 +24,9 @@ function underlyingClient(client: OpenTelemetryClient): {
     .client;
 }
 
-function connectWithStubbedTransport(resourceDimensions = new Map()): {
+function connectWithStubbedTransport(
+  resourceDimensions: Map<string, StringDimension> = new Map()
+): {
   client: OpenTelemetryClient;
   requests: ExportRequest[];
 } {
@@ -33,7 +35,7 @@ function connectWithStubbedTransport(resourceDimensions = new Map()): {
     port: 0,
     securityMode: SecurityMode.Plaintext,
     resourceDimensions,
-    metricDimensions: new Map(),
+    metricDimensions: new Map<string, StringDimension>(),
     interceptors: [],
   });
   const requests: ExportRequest[] = [];

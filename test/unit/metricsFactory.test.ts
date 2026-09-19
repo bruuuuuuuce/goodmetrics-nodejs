@@ -17,7 +17,6 @@ function capturingSink(): MetricsSink & {emitted: _Metrics[]} {
     emit(metrics: _Metrics) {
       emitted.push(metrics);
     },
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
     close() {},
   };
 }
