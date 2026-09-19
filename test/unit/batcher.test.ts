@@ -8,7 +8,6 @@ function upstreamOf(items: string[]): MetricsPipeline<string> {
         yield item;
       }
       // then hang forever, like a real upstream that hasn't produced more yet
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
       await new Promise<void>(() => {});
     },
   };
