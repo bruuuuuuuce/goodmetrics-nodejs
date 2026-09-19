@@ -1,0 +1,10 @@
+{
+  "name": "lambda-e2e-fake-collector",
+  "private": true,
+  "version": "0.0.0",
+  "main": "server.js",
+  "dependencies": {
+    "@grpc/grpc-js": "^1.14.5",
+    "otlp-generated": "^0.1.1"
+  }
+}

@@ -1,0 +1,4 @@
+handler/node_modules/
+handler/package-lock.json
+handler.zip
+goodmetrics-nodejs-*.tgz

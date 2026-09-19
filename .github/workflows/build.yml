@@ -23,3 +23,5 @@ jobs:
         run: npm test
       - name: Integration tests
         run: npm run integration
+      - name: Lambda e2e test (LocalStack)
+        run: bash test/lambda-e2e/run.sh

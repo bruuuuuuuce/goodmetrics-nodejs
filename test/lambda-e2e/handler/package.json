@@ -1,0 +1,6 @@
+{
+  "name": "lambda-e2e-handler",
+  "private": true,
+  "version": "0.0.0",
+  "main": "handler.js"
+}
