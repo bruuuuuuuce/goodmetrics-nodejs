@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.9.0...v0.9.1) (2026-09-19)
+
+
+### Bug Fixes
+
+* add repository field for npm provenance verification ([#63](https://github.com/bruuuuuuuce/goodmetrics-nodejs/issues/63)) ([6431f64](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/6431f64da93855109ac4daf76df87cd0ca87cf35))
+
 ## [0.9.0](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.8.0...v0.9.0) (2026-09-19)
 
 
