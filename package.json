@@ -44,7 +44,7 @@
     "goodmetrics-generated": "0.1.1",
     "google-protobuf": "3.21.2",
     "js-csp": "^1.0.1",
-    "otlp-generated": "0.1.1",
+    "otlp-generated": "0.1.3",
     "uuid": "^14.0.0"
   },
   "engines": {
