@@ -2,3 +2,4 @@ node_modules
 dist
 generated
 **/*.d.ts
+test/lambda-e2e

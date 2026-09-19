@@ -40,6 +40,11 @@ interface LightstepNativeLambdaOtlpProps {
    * defaults to 443, the default lightstep port
    */
   lightstepPort?: number;
+  /**
+   * defaults to `SecurityMode.Tls`. Use `SecurityMode.Plaintext` to point this at a local/dev
+   * OTLP collector that doesn't terminate TLS.
+   */
+  lightstepConnectionSecurityMode?: SecurityMode;
   logError: (message: string, error: unknown) => void;
   /**
    * Mostly for debugging purposes, logs after successfully sending metrics to the backend.
@@ -218,6 +223,7 @@ export class MetricsSetups {
     const client = OpenTelemetryClient.connect({
       sillyOtlpHostname: props.lightstepUrl ?? 'ingest.lightstep.com',
       port: props.lightstepPort ?? 443,
+      securityMode: props.lightstepConnectionSecurityMode,
       metricDimensions: new Map(),
       resourceDimensions: props.resourceDimensions,
       interceptors: [

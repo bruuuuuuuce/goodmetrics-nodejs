@@ -1,0 +1,37 @@
+networks:
+  lambda-e2e-net:
+    name: lambda-e2e-net
+
+services:
+  localstack:
+    image: localstack/localstack:4
+    networks:
+      - lambda-e2e-net
+    ports:
+      - '4566:4566'
+    environment:
+      - SERVICES=lambda,iam,sts
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      # Lambda execution containers are spawned as siblings via the mounted docker
+      # socket, not as compose-managed children - they must be explicitly told to
+      # join this network to be able to reach the `collector` service by name.
+      - LAMBDA_DOCKER_NETWORK=lambda-e2e-net
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+    healthcheck:
+      test: ['CMD', 'curl', '-sf', 'http://localhost:4566/_localstack/health']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  collector:
+    build: ./collector
+    networks:
+      - lambda-e2e-net
+    ports:
+      - '8080:8080'
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:8080/health']
+      interval: 5s
+      timeout: 5s
+      retries: 20
