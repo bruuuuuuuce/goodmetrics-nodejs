@@ -4,7 +4,8 @@
     "build": "tsc",
     "lint": "eslint . --ext .ts",
     "format": "eslint . --ext .ts --fix",
-    "test": "jest",
+    "test": "jest --testPathPattern=test/unit",
+    "integration": "jest --testPathPattern=test/integration",
     "dev-driver": "ts-node --prefer-ts-exts test/dev-driver.ts"
   },
   "license": "MIT",
