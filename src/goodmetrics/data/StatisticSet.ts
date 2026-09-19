@@ -62,7 +62,7 @@ export class StatisticSet extends Aggregation {
     });
   }
 
-  values() {
+  values(): {min: number; max: number; count: number; sum: number} {
     return {
       min: this.min,
       max: this.max,

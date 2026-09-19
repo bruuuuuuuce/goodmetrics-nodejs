@@ -55,7 +55,7 @@ export class SynchronizingBuffer
     this.elementAdded();
   }
 
-  close() {
+  close(): void {
     this.cancellationToken.cancel();
   }
 }

@@ -117,7 +117,7 @@ export class OpenTelemetryClient {
     });
   }
 
-  close() {
+  close(): void {
     this.client.close();
   }
 

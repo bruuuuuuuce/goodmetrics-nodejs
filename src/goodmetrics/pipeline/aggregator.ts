@@ -271,25 +271,31 @@ export class Aggregator
 
     // Simple measurements are statistic_sets
     for (const [name, value] of metrics.metricMeasurements) {
-      if (!metricPositions.has(position)) {
-        metricPositions.set(position, new Map());
+      let aggregationMap = metricPositions.get(position);
+      if (!aggregationMap) {
+        aggregationMap = new Map();
+        metricPositions.set(position, aggregationMap);
       }
-      if (!metricPositions.get(position)!.has(name)) {
-        metricPositions.get(position)!.set(name, new StatisticSet({}));
+      let aggregation = aggregationMap.get(name);
+      if (!aggregation) {
+        aggregation = new StatisticSet({});
+        aggregationMap.set(name, aggregation);
       }
-      const ss = metricPositions.get(position)!.get(name)!;
-      ss.accumulate(value);
+      aggregation.accumulate(value);
     }
 
     for (const [name, value] of metrics.metricDistributions) {
-      if (!metricPositions.has(position)) {
-        metricPositions.set(position, new Map());
+      let aggregationMap = metricPositions.get(position);
+      if (!aggregationMap) {
+        aggregationMap = new Map();
+        metricPositions.set(position, aggregationMap);
       }
-      if (!metricPositions.get(position)!.has(name)) {
-        metricPositions.get(position)!.set(name, new Histogram());
+      let aggregation = aggregationMap.get(name);
+      if (!aggregation) {
+        aggregation = new Histogram();
+        aggregationMap.set(name, aggregation);
       }
-      const histogram = metricPositions.get(position)!.get(name)!;
-      histogram.accumulate(value);
+      aggregation.accumulate(value);
     }
   }
 

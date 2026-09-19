@@ -19,7 +19,7 @@ export class Histogram extends Aggregation {
     this.bucketCounts = new Map<number, number>();
   }
 
-  accumulate(value: number) {
+  accumulate(value: number): void {
     const _bucket = bucket(value);
     const count = this.bucketCounts.get(_bucket);
     if (count) {
