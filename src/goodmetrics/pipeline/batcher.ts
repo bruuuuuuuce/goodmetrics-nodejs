@@ -63,4 +63,8 @@ export class Batcher<TUpstream> implements MetricsPipeline<TUpstream[]> {
       yield walkingBuffer;
     }
   }
+
+  close(): void {
+    this.cancellationToken.cancel();
+  }
 }

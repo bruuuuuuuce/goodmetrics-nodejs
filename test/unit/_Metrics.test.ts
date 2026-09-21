@@ -62,6 +62,7 @@ describe('_Metrics', () => {
 
   it('asGoofyOtlpMetricSequence() produces one Metric per measurement and per distribution', () => {
     const metrics = new _Metrics({name: 'my_metric', timestampMillis: 1});
+    metrics.dimension('region', 'us-east-1');
     metrics.measure('runs', 3);
     metrics.distribution('latency', 5);
 
@@ -72,5 +73,11 @@ describe('_Metrics', () => {
       expect.arrayContaining(['my_metric_runs', 'my_metric_latency'])
     );
     expect(sequence).toHaveLength(2);
+
+    const runsMetric = sequence.find(m => m.name === 'my_metric_runs');
+    const attributes = runsMetric?.gauge?.data_points[0].attributes;
+    expect(attributes?.find(a => a.key === 'region')?.value.string_value).toBe(
+      'us-east-1'
+    );
   });
 });

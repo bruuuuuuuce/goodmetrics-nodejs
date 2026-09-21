@@ -5,7 +5,13 @@ import {Histogram} from '../data/Histogram';
 import {Aggregation} from '../data/Aggregation';
 import {StatisticSet} from '../data/StatisticSet';
 import {library} from '../data/otlp/library';
-import {_Metrics, Dimension} from '../_Metrics';
+import {
+  _Metrics,
+  BooleanDimension,
+  Dimension,
+  NumberDimension,
+  StringDimension,
+} from '../_Metrics';
 import {MetricsPipeline} from './metricsPipeline';
 import {MetricsSink} from './metricsSink';
 import {CancellationToken} from './cancellationToken';
@@ -13,8 +19,34 @@ import {goodmetrics} from 'goodmetrics-generated';
 
 type DimensionPosition = Set<Dimension>;
 
+/**
+ * A stable, content-based key for a DimensionPosition. Dimension positions are
+ * freshly-allocated Sets on every _Metrics.dimensionPosition() call, so they
+ * can't be used as Map keys directly (Map keys compare by reference, not
+ * contents) without every emit() landing in its own bucket.
+ */
+function dimensionValueKey(dimension: Dimension): string {
+  if (dimension instanceof StringDimension) {
+    return `s:${dimension.name}:${dimension.value}`;
+  } else if (dimension instanceof NumberDimension) {
+    return `n:${dimension.name}:${dimension.value}`;
+  } else if (dimension instanceof BooleanDimension) {
+    return `b:${dimension.name}:${dimension.value}`;
+  } else {
+    throw new Error('cannot key an unknown dimension type');
+  }
+}
+
+function positionKey(position: DimensionPosition): string {
+  return Array.from(position, dimensionValueKey).sort().join('\u0001');
+}
+
 type AggregationMap = Map<string, Aggregation>;
-type DimensionPositionMap = Map<DimensionPosition, AggregationMap>;
+interface DimensionPositionEntry {
+  position: DimensionPosition;
+  aggregations: AggregationMap;
+}
+type DimensionPositionMap = Map<string, DimensionPositionEntry>;
 type MetricsMap = Map<string, DimensionPositionMap>;
 
 export function bucket(value: number): number {
@@ -251,11 +283,15 @@ export class Aggregator
         if (this.cancellationToken.isCancelled()) {
           return;
         }
+        const flattenedPositions: MetricPositions = new Map();
+        for (const entry of positions.values()) {
+          flattenedPositions.set(entry.position, entry.aggregations);
+        }
         yield new AggregatedBatch({
           timestampMillis: this.lastEmit,
           aggregationWidthMillis: this.aggregationWidthMillis,
           metric: metric,
-          positions: positions,
+          positions: flattenedPositions,
         });
       }
     }
@@ -263,19 +299,22 @@ export class Aggregator
 
   emit(metrics: _Metrics): void {
     const position = metrics.dimensionPosition();
+    const key = positionKey(position);
     let metricPositions = this.currentBatch.get(metrics.name);
     if (!metricPositions) {
       metricPositions = new Map();
       this.currentBatch.set(metrics.name, metricPositions);
     }
 
+    let entry = metricPositions.get(key);
+    if (!entry) {
+      entry = {position, aggregations: new Map()};
+      metricPositions.set(key, entry);
+    }
+    const aggregationMap = entry.aggregations;
+
     // Simple measurements are statistic_sets
     for (const [name, value] of metrics.metricMeasurements) {
-      let aggregationMap = metricPositions.get(position);
-      if (!aggregationMap) {
-        aggregationMap = new Map();
-        metricPositions.set(position, aggregationMap);
-      }
       let aggregation = aggregationMap.get(name);
       if (!aggregation) {
         aggregation = new StatisticSet({});
@@ -285,11 +324,6 @@ export class Aggregator
     }
 
     for (const [name, value] of metrics.metricDistributions) {
-      let aggregationMap = metricPositions.get(position);
-      if (!aggregationMap) {
-        aggregationMap = new Map();
-        metricPositions.set(position, aggregationMap);
-      }
       let aggregation = aggregationMap.get(name);
       if (!aggregation) {
         aggregation = new Histogram();

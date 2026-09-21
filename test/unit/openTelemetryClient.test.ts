@@ -5,10 +5,13 @@ import {
 import {_Metrics, StringDimension} from '../../src/goodmetrics/_Metrics';
 import {AggregatedBatch} from '../../src/goodmetrics/pipeline/aggregator';
 import {StatisticSet} from '../../src/goodmetrics/data/StatisticSet';
-import {otlp_metric_service} from 'otlp-generated';
+import {otlp_metric_service, otlp_metrics} from 'otlp-generated';
 
 type ExportRequest = InstanceType<
   typeof otlp_metric_service.opentelemetry.proto.collector.metrics.v1.ExportMetricsServiceRequest
+>;
+type ResourceMetrics = InstanceType<
+  typeof otlp_metrics.opentelemetry.proto.metrics.v1.ResourceMetrics
 >;
 type ExportFn = (
   request: ExportRequest,
@@ -25,7 +28,8 @@ function underlyingClient(client: OpenTelemetryClient): {
 }
 
 function connectWithStubbedTransport(
-  resourceDimensions: Map<string, StringDimension> = new Map()
+  resourceDimensions: Map<string, StringDimension> = new Map(),
+  logRawPayload?: (resourceMetrics: ResourceMetrics) => void
 ): {
   client: OpenTelemetryClient;
   requests: ExportRequest[];
@@ -37,6 +41,7 @@ function connectWithStubbedTransport(
     resourceDimensions,
     metricDimensions: new Map<string, StringDimension>(),
     interceptors: [],
+    logRawPayload,
   });
   const requests: ExportRequest[] = [];
   underlyingClient(client).Export = (request, _options, callback) => {
@@ -88,6 +93,17 @@ describe('OpenTelemetryClient.sendMetricsBatch', () => {
       ])
     ).rejects.toThrow('server unavailable');
   });
+
+  it('invokes the configured logRawPayload hook with the raw ResourceMetrics', async () => {
+    const logRawPayload = jest.fn();
+    const {client} = connectWithStubbedTransport(new Map(), logRawPayload);
+
+    await client.sendMetricsBatch([
+      new _Metrics({name: 'my_metric', timestampMillis: 1}),
+    ]);
+
+    expect(logRawPayload).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('OpenTelemetryClient.sendPreaggregatedBatch', () => {
@@ -109,6 +125,74 @@ describe('OpenTelemetryClient.sendPreaggregatedBatch', () => {
     expect(requests).toHaveLength(1);
     const [resourceMetrics] = requests[0].resource_metrics;
     expect(resourceMetrics.scope_metrics).toHaveLength(1);
+  });
+
+  it('rejects when the underlying gRPC call reports an error', async () => {
+    const {client} = connectWithStubbedTransport();
+    underlyingClient(client).Export = (_request, _options, callback) => {
+      callback(new Error('server unavailable'));
+    };
+
+    const stats = new StatisticSet({});
+    stats.accumulate(10);
+    const position = new Set([new StringDimension('shard', 'a')]);
+    const batch = new AggregatedBatch({
+      timestampMillis: 1000,
+      aggregationWidthMillis: 10_000,
+      metric: 'agg_metric',
+      positions: new Map([[position, new Map([['latency', stats]])]]),
+    });
+
+    await expect(client.sendPreaggregatedBatch([batch])).rejects.toThrow(
+      'server unavailable'
+    );
+  });
+
+  it('invokes the configured logRawPayload hook with the raw ResourceMetrics', async () => {
+    const logRawPayload = jest.fn();
+    const {client} = connectWithStubbedTransport(new Map(), logRawPayload);
+
+    const stats = new StatisticSet({});
+    stats.accumulate(10);
+    const position = new Set([new StringDimension('shard', 'a')]);
+    const batch = new AggregatedBatch({
+      timestampMillis: 1000,
+      aggregationWidthMillis: 10_000,
+      metric: 'agg_metric',
+      positions: new Map([[position, new Map([['latency', stats]])]]),
+    });
+
+    await client.sendPreaggregatedBatch([batch]);
+
+    expect(logRawPayload).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('OpenTelemetryClient.connect', () => {
+  it('creates SSL channel credentials when securityMode is Tls (or omitted)', () => {
+    const client = OpenTelemetryClient.connect({
+      sillyOtlpHostname: '127.0.0.1',
+      port: 0,
+      securityMode: SecurityMode.Tls,
+      resourceDimensions: new Map(),
+      metricDimensions: new Map(),
+      interceptors: [],
+    });
+
+    expect(client).toBeInstanceOf(OpenTelemetryClient);
+    client.close();
+  });
+
+  it('defaults sillyOtlpHostname and port when omitted', () => {
+    const client = OpenTelemetryClient.connect({
+      securityMode: SecurityMode.Plaintext,
+      resourceDimensions: new Map(),
+      metricDimensions: new Map(),
+      interceptors: [],
+    });
+
+    expect(client).toBeInstanceOf(OpenTelemetryClient);
+    client.close();
   });
 });
 

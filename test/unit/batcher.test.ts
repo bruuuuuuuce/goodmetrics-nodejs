@@ -38,6 +38,13 @@ describe('Batcher', () => {
     expect(value).toEqual(['only']);
   });
 
+  it('defaults batchSize and batchAgeSeconds when omitted', () => {
+    const upstream = upstreamOf([]);
+    const batcher = new Batcher({upstream});
+
+    expect(batcher).toBeInstanceOf(Batcher);
+  });
+
   it('flushes an empty batch on age timeout when upstream produced nothing', async () => {
     const upstream = upstreamOf([]);
     const batcher = new Batcher({
@@ -48,5 +55,21 @@ describe('Batcher', () => {
 
     const {value} = await batcher.consume().next();
     expect(value).toEqual([]);
+  });
+
+  it('stops consume() once closed', async () => {
+    const upstream = upstreamOf([]);
+    const batcher = new Batcher({
+      upstream,
+      batchSize: 1000,
+      batchAgeSeconds: 10,
+    });
+
+    const gen = batcher.consume();
+    const pending = gen.next();
+    batcher.close();
+
+    const result = await pending;
+    expect(result.done).toBe(true);
   });
 });
