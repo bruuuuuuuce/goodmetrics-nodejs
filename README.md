@@ -10,12 +10,12 @@ This library is based off of the opensource [kotlin goodmetrics library](https:/
 npm i goodmetrics-nodejs
 ```
 
-example usages 
+## Example usage
 ```javascript
 import {Dimension, MetricsSetups} from 'goodmetrics-nodejs';
 
 const main = async () => {
-    // metrics setup for recording metrics inside of a lambda
+  // metrics setup for recording metrics inside of a lambda
   const lambdaMetrics =
     MetricsSetups.lightstepNativeOtlpButItSendsMetricsUponRecordingForLambda({
       lightstepAccessToken: '<your lightstep api key>',
@@ -31,23 +31,14 @@ const main = async () => {
       metrics.dimension('result', 'success');
     }
   );
-
-  // using goodmetrics
-  const goodmetrics = MetricsSetups.goodMetrics();
-  await goodmetrics.unaryMetricsFactory.record({name: 'unary'}, metrics => {
-    metrics.dimension('is_local', true);
-    metrics.measure('runs', 1);
-  });
-  await goodmetrics.preaggregatedMetricsFactory.record(
-    {name: 'preaggregated'},
-    metrics => {
-        metrics.measure('w00t', 1);
-    }
-  );
 };
 
 main().finally();
 ```
+
+See [`examples/`](./examples) for more - a long-running (non-Lambda) process buffering/batching
+metrics, pointing at any generic OTLP backend (e.g. Datadog), and using the bespoke `goodmetrics`
+protocol instead of OTLP.
 
 ## Protos
 - [open telemetry client protos](https://github.com/bruuuuuuuce/otlp-generated)
