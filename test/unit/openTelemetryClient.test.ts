@@ -110,6 +110,43 @@ describe('OpenTelemetryClient.sendPreaggregatedBatch', () => {
     const [resourceMetrics] = requests[0].resource_metrics;
     expect(resourceMetrics.scope_metrics).toHaveLength(1);
   });
+
+  it('rejects when the underlying gRPC call reports an error', async () => {
+    const {client} = connectWithStubbedTransport();
+    underlyingClient(client).Export = (_request, _options, callback) => {
+      callback(new Error('server unavailable'));
+    };
+
+    const stats = new StatisticSet({});
+    stats.accumulate(10);
+    const position = new Set([new StringDimension('shard', 'a')]);
+    const batch = new AggregatedBatch({
+      timestampMillis: 1000,
+      aggregationWidthMillis: 10_000,
+      metric: 'agg_metric',
+      positions: new Map([[position, new Map([['latency', stats]])]]),
+    });
+
+    await expect(client.sendPreaggregatedBatch([batch])).rejects.toThrow(
+      'server unavailable'
+    );
+  });
+});
+
+describe('OpenTelemetryClient.connect', () => {
+  it('creates SSL channel credentials when securityMode is Tls (or omitted)', () => {
+    const client = OpenTelemetryClient.connect({
+      sillyOtlpHostname: '127.0.0.1',
+      port: 0,
+      securityMode: SecurityMode.Tls,
+      resourceDimensions: new Map(),
+      metricDimensions: new Map(),
+      interceptors: [],
+    });
+
+    expect(client).toBeInstanceOf(OpenTelemetryClient);
+    client.close();
+  });
 });
 
 describe('OpenTelemetryClient.close', () => {

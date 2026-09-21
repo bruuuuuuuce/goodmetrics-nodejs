@@ -129,4 +129,44 @@ describe('MetricsFactory', () => {
     expect(sink.emitted[0].timestampMillis).toBeGreaterThanOrEqual(before);
     expect(sink.emitted[0].timestampMillis).toBeLessThanOrEqual(after);
   });
+
+  describe('logging', () => {
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it.each(['debug', 'info', 'error'] as const)(
+      'logs finalization details via console.debug when logLevel is %s',
+      async logLevel => {
+        const debugSpy = jest
+          .spyOn(console, 'debug')
+          .mockImplementation(() => undefined);
+        const sink = capturingSink();
+        const factory = new MetricsFactory({
+          metricsSink: sink,
+          totalTimeType: TotaltimeType.None,
+          logLevel,
+        });
+
+        await factory.record({name: 'op'}, () => undefined);
+
+        expect(debugSpy).toHaveBeenCalled();
+      }
+    );
+
+    it('does not log anything when logLevel is omitted (defaults to none)', async () => {
+      const debugSpy = jest
+        .spyOn(console, 'debug')
+        .mockImplementation(() => undefined);
+      const sink = capturingSink();
+      const factory = new MetricsFactory({
+        metricsSink: sink,
+        totalTimeType: TotaltimeType.None,
+      });
+
+      await factory.record({name: 'op'}, () => undefined);
+
+      expect(debugSpy).not.toHaveBeenCalled();
+    });
+  });
 });

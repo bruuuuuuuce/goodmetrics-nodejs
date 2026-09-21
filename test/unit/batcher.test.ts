@@ -49,4 +49,20 @@ describe('Batcher', () => {
     const {value} = await batcher.consume().next();
     expect(value).toEqual([]);
   });
+
+  it('stops consume() once closed', async () => {
+    const upstream = upstreamOf([]);
+    const batcher = new Batcher({
+      upstream,
+      batchSize: 1000,
+      batchAgeSeconds: 10,
+    });
+
+    const gen = batcher.consume();
+    const pending = gen.next();
+    batcher.close();
+
+    const result = await pending;
+    expect(result.done).toBe(true);
+  });
 });
