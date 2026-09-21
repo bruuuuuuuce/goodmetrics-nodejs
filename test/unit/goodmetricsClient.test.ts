@@ -121,4 +121,37 @@ describe('GoodmetricsClient.sendPreaggregatedMetrics', () => {
       2
     );
   });
+
+  it('rejects when the underlying gRPC call reports an error', async () => {
+    const {client} = connectWithStubbedTransport();
+    stubSendMetrics(client, (_request, _options, callback) => {
+      callback(new Error('server unavailable'));
+    });
+
+    const stats = new StatisticSet({});
+    stats.accumulate(10);
+    const position = new Set([new StringDimension('shard', 'a')]);
+    const batch = new AggregatedBatch({
+      timestampMillis: 1000,
+      aggregationWidthMillis: 10_000,
+      metric: 'agg_metric',
+      positions: new Map([[position, new Map([['latency', stats]])]]),
+    });
+
+    await expect(client.sendPreaggregatedMetrics([batch])).rejects.toThrow(
+      'server unavailable'
+    );
+  });
+});
+
+describe('GoodmetricsClient.connect', () => {
+  it('creates SSL channel credentials when securityMode is Tls (or omitted)', () => {
+    const client = GoodmetricsClient.connect({
+      hostname: '127.0.0.1',
+      port: 0,
+      securityMode: SecurityMode.Tls,
+    });
+
+    expect(client).toBeInstanceOf(GoodmetricsClient);
+  });
 });

@@ -165,6 +165,7 @@ describe('Aggregator', () => {
     const aggregator = new Aggregator({aggregationWidthMillis: 20});
 
     const metrics = new _Metrics({name: 'my_metric', timestampMillis: 1});
+    metrics.dimension('shard', 'a');
     metrics.measure('count', 5);
     aggregator.emit(metrics);
 
@@ -175,6 +176,7 @@ describe('Aggregator', () => {
 
     const [datum] = value.asGoodmetrics();
     expect(datum.metric).toBe('my_metric');
+    expect(datum.dimensions.get('shard')?.string).toBe('a');
     expect(datum.measurements.get('count')?.statistic_set?.samplecount).toBe(1);
 
     aggregator.close();
@@ -192,6 +194,7 @@ describe('Aggregator', () => {
     const aggregator = new Aggregator({aggregationWidthMillis: 20});
 
     const metrics = new _Metrics({name: 'my_metric', timestampMillis: 1});
+    metrics.dimension('shardNumber', 1);
     metrics.distribution('latency', 5);
     aggregator.emit(metrics);
     aggregator.emit(metrics);
@@ -202,8 +205,28 @@ describe('Aggregator', () => {
     }
 
     const [datum] = value.asGoodmetrics();
+    expect(datum.dimensions.get('shardNumber')?.number).toBe(1);
     const buckets = datum.measurements.get('latency')?.histogram?.buckets;
     expect(buckets?.get(5)).toBe(2);
+
+    aggregator.close();
+  });
+
+  it('aggregates metrics keyed by boolean dimensions', async () => {
+    const aggregator = new Aggregator({aggregationWidthMillis: 20});
+
+    const metrics = new _Metrics({name: 'flagged_metric', timestampMillis: 1});
+    metrics.dimension('enabled', true);
+    metrics.measure('count', 1);
+    aggregator.emit(metrics);
+
+    const {value} = await aggregator.consume().next();
+    if (!(value instanceof AggregatedBatch)) {
+      throw new Error('expected consume() to yield an AggregatedBatch');
+    }
+
+    const [datum] = value.asGoodmetrics();
+    expect(datum.dimensions.get('enabled')?.boolean).toBe(true);
 
     aggregator.close();
   });

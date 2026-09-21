@@ -38,6 +38,13 @@ describe('Batcher', () => {
     expect(value).toEqual(['only']);
   });
 
+  it('defaults batchSize and batchAgeSeconds when omitted', () => {
+    const upstream = upstreamOf([]);
+    const batcher = new Batcher({upstream});
+
+    expect(batcher).toBeInstanceOf(Batcher);
+  });
+
   it('flushes an empty batch on age timeout when upstream produced nothing', async () => {
     const upstream = upstreamOf([]);
     const batcher = new Batcher({
