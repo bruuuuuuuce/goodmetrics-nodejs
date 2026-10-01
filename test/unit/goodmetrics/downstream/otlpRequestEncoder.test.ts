@@ -30,10 +30,10 @@ describe('OtlpRequestEncoder', () => {
   it('adds shared metric dimensions while preserving record-specific values', () => {
     const encoder = new OtlpRequestEncoder({
       resourceDimensions: new Map(),
-      metricDimensions: new Map([
-        ['region', new StringDimension('region', 'west')],
-        ['service', new StringDimension('service', 'api')],
-      ]),
+      metricDimensions: [
+        new StringDimension('region', 'west'),
+        new StringDimension('service', 'api'),
+      ],
     });
     const metrics = new _Metrics({name: 'orders', timestampMillis: 1000});
     metrics.dimension('region', 'east');

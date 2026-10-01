@@ -27,7 +27,7 @@ const main = async () => {
       ingestUrl: process.env.OTLP_INGEST_URL || 'localhost',
       ingestPort: Number(process.env.OTLP_INGEST_PORT) || 4317,
       resourceDimensions: new Map<string, Dimension>(),
-      sharedDimensions: new Map<string, Dimension>(),
+      sharedDimensions: [],
       logError(message: string, error: unknown): void {
         console.error(message, error);
       },

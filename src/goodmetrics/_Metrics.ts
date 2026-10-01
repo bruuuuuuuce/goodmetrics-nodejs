@@ -27,8 +27,11 @@ export abstract class Dimension {
   abstract asGoodmetricsDimension(): goodmetrics.Dimension;
 }
 
-export type ResourceDimensions =
+export type DimensionCollection =
   ReadonlyMap<string, Dimension> | readonly Dimension[];
+export type ResourceDimensions = DimensionCollection;
+export type MetricDimensions = DimensionCollection;
+export type SharedDimensions = DimensionCollection;
 
 export class StringDimension extends Dimension {
   readonly value: string;

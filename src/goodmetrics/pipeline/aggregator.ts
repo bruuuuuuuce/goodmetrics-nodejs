@@ -5,7 +5,7 @@ import {Histogram} from '../data/Histogram';
 import {Aggregation} from '../data/Aggregation';
 import {StatisticSet} from '../data/StatisticSet';
 import {library} from '../data/otlp/library';
-import {_Metrics, Dimension} from '../_Metrics';
+import {_Metrics, Dimension, MetricDimensions} from '../_Metrics';
 import {MetricsPipeline} from './metricsPipeline';
 import {MetricsSink} from './metricsSink';
 import {CancellationToken} from './cancellationToken';
@@ -213,7 +213,7 @@ export class AggregatedBatch {
 
 type AggregatorProps = {
   aggregationWidthMillis?: number;
-  metricDimensions?: Map<string, Dimension>;
+  metricDimensions?: MetricDimensions;
 };
 
 export function validateAggregationWidthMillis(

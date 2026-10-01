@@ -103,9 +103,7 @@ it('waits for the Lambda HTTP export and sends configured headers and dimensions
     resourceDimensions: new Map([
       ['service', new StringDimension('service', 'checkout')],
     ]),
-    metricDimensions: new Map([
-      ['region', new StringDimension('region', 'west')],
-    ]),
+    metricDimensions: [new StringDimension('region', 'west')],
     logError: jest.fn(),
   });
   factories.push(factory);
@@ -290,9 +288,7 @@ it('groups equivalent shared dimensions before preaggregated HTTP export', async
   const configured = MetricsSetups.otlpHttp({
     endpointUrl,
     resourceDimensions: new Map<string, Dimension>(),
-    metricDimensions: new Map([
-      ['region', new StringDimension('region', 'west')],
-    ]),
+    metricDimensions: [new StringDimension('region', 'west')],
     aggregationWidthMillis: 20,
     preaggregatedBatchMaxMetricsCount: 1,
     preaggregatedBatchMaxAgeSeconds: 0.01,

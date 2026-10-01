@@ -24,7 +24,7 @@ function stubSendMetrics(client: GoodmetricsClient, impl: SendMetricsFn): void {
 }
 
 function connectWithStubbedTransport(
-  sharedDimensions?: Map<string, StringDimension>
+  sharedDimensions?: Map<string, StringDimension> | readonly StringDimension[]
 ): {client: GoodmetricsClient; requests: MetricsRequest[]} {
   const client = GoodmetricsClient.connect({
     hostname: '127.0.0.1',
@@ -80,6 +80,32 @@ describe('GoodmetricsClient.sendMetricsBatch', () => {
     ]);
 
     expect(requests[0].shared_dimensions.get('env')?.string).toBe('prod');
+  });
+
+  it('uses dimension names as keys for array shared dimensions', async () => {
+    const {client, requests} = connectWithStubbedTransport([
+      new StringDimension('env', 'prod'),
+    ]);
+
+    await client.sendMetricsBatch([
+      new _Metrics({name: 'my_metric', timestampMillis: 1}),
+    ]);
+
+    expect(requests[0].shared_dimensions.get('env')?.string).toBe('prod');
+  });
+
+  it('preserves the supplied keys for map shared dimensions', async () => {
+    const {client, requests} = connectWithStubbedTransport(
+      new Map([['environment', new StringDimension('env', 'prod')]])
+    );
+
+    await client.sendMetricsBatch([
+      new _Metrics({name: 'my_metric', timestampMillis: 1}),
+    ]);
+
+    expect(requests[0].shared_dimensions.get('environment')?.string).toBe(
+      'prod'
+    );
   });
 
   it('rejects when the underlying gRPC call reports an error', async () => {

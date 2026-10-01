@@ -29,7 +29,9 @@ function underlyingClient(client: OpenTelemetryClient): {
 
 function connectWithStubbedTransport(
   resourceDimensions: Map<string, StringDimension> = new Map(),
-  logRawPayload?: (resourceMetrics: ResourceMetrics) => void
+  logRawPayload?: (resourceMetrics: ResourceMetrics) => void,
+  metricDimensions:
+    Map<string, StringDimension> | readonly StringDimension[] = new Map()
 ): {
   client: OpenTelemetryClient;
   requests: ExportRequest[];
@@ -39,7 +41,7 @@ function connectWithStubbedTransport(
     port: 0,
     securityMode: SecurityMode.Plaintext,
     resourceDimensions,
-    metricDimensions: new Map<string, StringDimension>(),
+    metricDimensions,
     interceptors: [],
     logRawPayload,
   });
@@ -79,6 +81,24 @@ describe('OpenTelemetryClient.sendMetricsBatch', () => {
     expect(attributes.find(a => a.key === 'env')?.value.string_value).toBe(
       'prod'
     );
+  });
+
+  it('attaches array shared dimensions to OTLP metric data points', async () => {
+    const {client, requests} = connectWithStubbedTransport(
+      new Map(),
+      undefined,
+      [new StringDimension('region', 'west')]
+    );
+    const metrics = new _Metrics({name: 'orders', timestampMillis: 1});
+    metrics.measure('count', 1);
+
+    await client.sendMetricsBatch([metrics]);
+
+    const attributes =
+      requests[0].resource_metrics[0].scope_metrics[0].metrics[0].gauge
+        .data_points[0].attributes;
+    expect(attributes[0].key).toBe('region');
+    expect(attributes[0].value.string_value).toBe('west');
   });
 
   it('rejects when the underlying gRPC call reports an error', async () => {
