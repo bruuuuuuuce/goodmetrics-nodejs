@@ -44,7 +44,7 @@ export class OtlpHttpClient implements OtlpMetricsExporter {
     if (
       props.timeoutMillis !== undefined &&
       (!Number.isFinite(props.timeoutMillis) ||
-        props.timeoutMillis <= 0 ||
+        props.timeoutMillis < 1 ||
         props.timeoutMillis > 2_147_483_647)
     ) {
       throw new RangeError(

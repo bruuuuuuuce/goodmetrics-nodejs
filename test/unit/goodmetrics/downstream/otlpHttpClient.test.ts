@@ -52,6 +52,15 @@ function client(
   });
 }
 
+it('rejects timeoutMillis below 1 ms and accepts the 1 ms boundary', () => {
+  const endpoint = 'https://example.com/v1/metrics';
+  expect(() => client(endpoint, undefined, 0.5)).toThrow(
+    /timeoutMillis must be between 1 and 2147483647/
+  );
+  const exporter = client(endpoint, undefined, 1);
+  exporter.close();
+});
+
 it('posts unary metrics as OTLP Protobuf with headers and accepts an empty 2xx body', async () => {
   let received = false;
   const endpoint = await receive((request, body, response) => {
