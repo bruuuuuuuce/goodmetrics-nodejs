@@ -5,13 +5,7 @@ import {Histogram} from '../data/Histogram';
 import {Aggregation} from '../data/Aggregation';
 import {StatisticSet} from '../data/StatisticSet';
 import {library} from '../data/otlp/library';
-import {
-  _Metrics,
-  BooleanDimension,
-  Dimension,
-  NumberDimension,
-  StringDimension,
-} from '../_Metrics';
+import {_Metrics, Dimension} from '../_Metrics';
 import {MetricsPipeline} from './metricsPipeline';
 import {MetricsSink} from './metricsSink';
 import {CancellationToken} from './cancellationToken';
@@ -26,15 +20,9 @@ type DimensionPosition = Set<Dimension>;
  * contents) without every emit() landing in its own bucket.
  */
 function dimensionValueKey(dimension: Dimension): string {
-  if (dimension instanceof StringDimension) {
-    return `s:${dimension.name}:${dimension.value}`;
-  } else if (dimension instanceof NumberDimension) {
-    return `n:${dimension.name}:${dimension.value}`;
-  } else if (dimension instanceof BooleanDimension) {
-    return `b:${dimension.name}:${dimension.value}`;
-  } else {
-    throw new Error('cannot key an unknown dimension type');
-  }
+  return Buffer.from(dimension.asOtlpKeyValue().serializeBinary()).toString(
+    'hex'
+  );
 }
 
 function positionKey(position: DimensionPosition): string {
@@ -225,35 +213,60 @@ export class AggregatedBatch {
 
 type AggregatorProps = {
   aggregationWidthMillis?: number;
+  metricDimensions?: Map<string, Dimension>;
 };
+
+export function validateAggregationWidthMillis(
+  aggregationWidthMillis: number
+): void {
+  if (
+    !Number.isInteger(aggregationWidthMillis) ||
+    aggregationWidthMillis < 1 ||
+    aggregationWidthMillis > 2_147_483_647
+  ) {
+    throw new RangeError(
+      'aggregationWidthMillis must be an integer between 1 and 2147483647 milliseconds'
+    );
+  }
+}
 
 export class Aggregator
   implements MetricsPipeline<AggregatedBatch>, MetricsSink
 {
   private readonly aggregationWidthMillis: number;
+  private readonly metricDimensions: Map<string, Dimension>;
   private readonly cancellationToken: CancellationToken;
+  private readonly pendingDelays = new Set<() => void>();
   private currentBatch: MetricsMap;
   private lastEmit: number;
 
   constructor(props: AggregatorProps) {
     const now = Date.now();
-    this.aggregationWidthMillis = props.aggregationWidthMillis ?? 10 * 1000;
+    const aggregationWidthMillis = props.aggregationWidthMillis ?? 10 * 1000;
+    validateAggregationWidthMillis(aggregationWidthMillis);
+    this.aggregationWidthMillis = aggregationWidthMillis;
+    this.metricDimensions = new Map();
+    for (const dimension of props.metricDimensions?.values() ?? []) {
+      this.metricDimensions.set(dimension.name, dimension);
+    }
     this.lastEmit = now - (now % this.aggregationWidthMillis);
     this.currentBatch = new Map();
     this.cancellationToken = new CancellationToken();
   }
 
-  private delay = async (millis: number): Promise<void> => {
-    let timeoutId: NodeJS.Timeout | undefined;
-    try {
-      return await new Promise<void>(resolve => {
-        timeoutId = setTimeout(() => {
-          resolve();
-        }, millis);
-      });
-    } finally {
-      clearTimeout(timeoutId);
+  private delay = (millis: number): Promise<void> => {
+    if (this.cancellationToken.isCancelled()) {
+      return Promise.resolve();
     }
+    return new Promise<void>(resolve => {
+      const complete = (): void => {
+        clearTimeout(timeoutId);
+        this.pendingDelays.delete(complete);
+        resolve();
+      };
+      const timeoutId = setTimeout(complete, millis);
+      this.pendingDelays.add(complete);
+    });
   };
 
   async *consume(): AsyncGenerator<AggregatedBatch, void, void> {
@@ -261,21 +274,20 @@ export class Aggregator
       if (this.cancellationToken.isCancelled()) {
         return;
       }
-      // epoch time at which we will next emit metrics
-      const nextEmit = this.lastEmit + this.aggregationWidthMillis;
-      // difference between now and when we will next emit metrics, should be negative
-      const timeToNextEmit = Date.now() - nextEmit;
-      this.lastEmit += this.aggregationWidthMillis;
-      if (timeToNextEmit > 0 || this.aggregationWidthMillis < -timeToNextEmit) {
-        // Skip a time column because of sadness.
-        // Resume on the column cadence as best we can.
-        // TODO race with cancellation
-        await this.delay(Math.abs(timeToNextEmit));
-        continue;
+      const previousEmit = this.lastEmit;
+      const now = Date.now();
+      const nextEmit = Math.max(
+        previousEmit + this.aggregationWidthMillis,
+        Math.ceil(now / this.aggregationWidthMillis) *
+          this.aggregationWidthMillis
+      );
+      // A slow downstream send may pause consume() across several windows.
+      // Flush on the next aligned boundary and account for the full interval.
+      await this.delay(Math.max(0, nextEmit - now));
+      if (this.cancellationToken.isCancelled()) {
+        return;
       }
-
-      // TODO race with cancellation
-      await this.delay(-timeToNextEmit);
+      this.lastEmit = nextEmit;
       const batch = this.currentBatch;
       this.currentBatch = new Map();
 
@@ -289,7 +301,7 @@ export class Aggregator
         }
         yield new AggregatedBatch({
           timestampMillis: this.lastEmit,
-          aggregationWidthMillis: this.aggregationWidthMillis,
+          aggregationWidthMillis: nextEmit - previousEmit,
           metric: metric,
           positions: flattenedPositions,
         });
@@ -298,7 +310,11 @@ export class Aggregator
   }
 
   emit(metrics: _Metrics): void {
-    const position = metrics.dimensionPosition();
+    const positionByName = new Map(this.metricDimensions);
+    for (const dimension of metrics.dimensionPosition()) {
+      positionByName.set(dimension.name, dimension);
+    }
+    const position = new Set(positionByName.values());
     const key = positionKey(position);
     let metricPositions = this.currentBatch.get(metrics.name);
     if (!metricPositions) {
@@ -335,5 +351,8 @@ export class Aggregator
 
   close(): void {
     this.cancellationToken.cancel();
+    for (const complete of this.pendingDelays) {
+      complete();
+    }
   }
 }

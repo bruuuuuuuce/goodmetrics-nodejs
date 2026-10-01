@@ -10,12 +10,22 @@ import {
   HeaderInterceptorProvider,
 } from './downstream/grpc/headerInterceptor';
 import {SynchronizingBuffer} from './pipeline/synchronizingBuffer';
-import {Batcher} from './pipeline/batcher';
+import {
+  Batcher,
+  validateBatchAgeSeconds,
+  validateBatchSize,
+} from './pipeline/batcher';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import * as csp from 'js-csp';
-import {AggregatedBatch, Aggregator} from './pipeline/aggregator';
+import {
+  AggregatedBatch,
+  Aggregator,
+  validateAggregationWidthMillis,
+} from './pipeline/aggregator';
 import {GoodmetricsClient} from './downstream/goodmetricsClient';
+import {OtlpHttpClient} from './downstream/otlpHttpClient';
+import {OtlpMetricsExporter} from './downstream/otlpMetricsExporter';
 
 export interface ConfiguredMetrics {
   unaryMetricsFactory: MetricsFactory;
@@ -94,16 +104,17 @@ interface RawNativeLambdaOtlpForLambdaProps {
 interface ConfigureBatchedUnaryLightstepSinkProps {
   batchSize: number;
   batchMaxAgeSeconds: number;
-  client: OpenTelemetryClient;
+  client: OtlpMetricsExporter;
   logError: (message: string, error: unknown) => void;
   onSendUnary?: (metrics: Metrics[]) => void;
 }
 
 interface ConfigureBatchedPreaggregatedLightstepSinkProps {
   aggregationWidthMillis?: number;
+  metricDimensions?: Map<string, Dimension>;
   batchSize: number;
   batchMaxAgeSeconds: number;
-  client: OpenTelemetryClient;
+  client: OtlpMetricsExporter;
   logError: (message: string, error: unknown) => void;
   onSendPreaggregated?: (aggregatedBatch: AggregatedBatch[]) => void;
 }
@@ -141,11 +152,125 @@ interface GoodmetricsSetupProps {
   aggregationWidthMillis?: number;
 }
 
+interface OtlpHttpLambdaProps {
+  endpointUrl: string;
+  headers?: Record<string, string>;
+  resourceDimensions: Map<string, Dimension>;
+  metricDimensions?: Map<string, Dimension>;
+  timeoutMillis?: number;
+  logError: (message: string, error: unknown) => void;
+  doLogSuccess?: boolean;
+  onSendUnary?: (metrics: Metrics[]) => void;
+  logLevel?: LogLevel;
+}
+
+interface OtlpHttpBatchProps {
+  endpointUrl: string;
+  headers?: Record<string, string>;
+  resourceDimensions: Map<string, Dimension>;
+  metricDimensions?: Map<string, Dimension>;
+  timeoutMillis?: number;
+  aggregationWidthMillis?: number;
+  unaryBatchSizeMaxMetricsCount?: number;
+  unaryBatchMaxAgeSeconds?: number;
+  preaggregatedBatchMaxMetricsCount?: number;
+  preaggregatedBatchMaxAgeSeconds?: number;
+  logError: (message: string, error: unknown) => void;
+  onSendUnary?: (metrics: Metrics[]) => void;
+  onSendPreaggregated?: (aggregatedBatch: AggregatedBatch[]) => void;
+  logLevel?: LogLevel;
+}
+
 export class MetricsSetups {
+  static otlpHttp(props: OtlpHttpBatchProps): ConfiguredMetrics {
+    validateAggregationWidthMillis(props.aggregationWidthMillis ?? 10 * 1000);
+    validateBatchSize(
+      props.unaryBatchSizeMaxMetricsCount ?? 1000,
+      'unaryBatchSizeMaxMetricsCount'
+    );
+    validateBatchSize(
+      props.preaggregatedBatchMaxMetricsCount ?? 1000,
+      'preaggregatedBatchMaxMetricsCount'
+    );
+    validateBatchAgeSeconds(
+      props.unaryBatchMaxAgeSeconds ?? 10,
+      'unaryBatchMaxAgeSeconds'
+    );
+    validateBatchAgeSeconds(
+      props.preaggregatedBatchMaxAgeSeconds ?? 10,
+      'preaggregatedBatchMaxAgeSeconds'
+    );
+    const client = OtlpHttpClient.connect({
+      endpointUrl: props.endpointUrl,
+      headers: props.headers,
+      resourceDimensions: props.resourceDimensions,
+      metricDimensions: props.metricDimensions ?? new Map<string, Dimension>(),
+      timeoutMillis: props.timeoutMillis,
+    });
+    const unarySink = this.configureBatchedUnaryLightstepSink({
+      batchMaxAgeSeconds: props.unaryBatchMaxAgeSeconds ?? 10,
+      batchSize: props.unaryBatchSizeMaxMetricsCount ?? 1000,
+      client,
+      logError: props.logError,
+      onSendUnary: props.onSendUnary,
+    });
+    const preaggregatedSink = this.configureBatchedPreaggregatedLightstepSink({
+      aggregationWidthMillis: props.aggregationWidthMillis,
+      metricDimensions: props.metricDimensions,
+      batchMaxAgeSeconds: props.preaggregatedBatchMaxAgeSeconds ?? 10,
+      batchSize: props.preaggregatedBatchMaxMetricsCount ?? 1000,
+      client,
+      logError: props.logError,
+      onSendPreaggregated: props.onSendPreaggregated,
+    });
+    return {
+      unaryMetricsFactory: new MetricsFactory({
+        metricsSink: unarySink,
+        totalTimeType: TotaltimeType.DistributionMilliseconds,
+        logLevel: props.logLevel,
+      }),
+      preaggregatedMetricsFactory: new MetricsFactory({
+        metricsSink: preaggregatedSink,
+        totalTimeType: TotaltimeType.DistributionMilliseconds,
+        logLevel: props.logLevel,
+      }),
+    };
+  }
+
+  static otlpHttpForLambda(props: OtlpHttpLambdaProps): MetricsFactory {
+    const client = OtlpHttpClient.connect({
+      endpointUrl: props.endpointUrl,
+      headers: props.headers,
+      resourceDimensions: props.resourceDimensions,
+      metricDimensions: props.metricDimensions ?? new Map<string, Dimension>(),
+      timeoutMillis: props.timeoutMillis,
+    });
+    const sink: MetricsSink = {
+      close(): void {
+        client.close();
+      },
+      async emit(metrics: _Metrics): Promise<void> {
+        props.onSendUnary?.([metrics]);
+        try {
+          await client.sendMetricsBatch([metrics]);
+          props.doLogSuccess && console.log('metrics sent to backend');
+        } catch (error) {
+          props.logError('error while sending blocking metrics', error);
+        }
+      },
+    };
+    return new MetricsFactory({
+      metricsSink: sink,
+      totalTimeType: TotaltimeType.DistributionMilliseconds,
+      logLevel: props.logLevel,
+    });
+  }
+
   static goodMetrics(props?: GoodmetricsSetupProps): ConfiguredMetrics {
     const host = props?.host ?? 'localhost';
     const port = props?.port ?? 9573;
     const aggregationWidthMillis = props?.aggregationWidthMillis ?? 10 * 1000;
+    validateAggregationWidthMillis(aggregationWidthMillis);
     const unaryFactory = this.configureGoodmetricsUnaryFactory({
       host: host,
       port: port,
@@ -164,6 +289,23 @@ export class MetricsSetups {
   static lightstepNativeOtlp(
     props: LightstepNativeOtlpProps
   ): ConfiguredMetrics {
+    validateAggregationWidthMillis(props.aggregationWidthMillis ?? 10 * 1000);
+    validateBatchSize(
+      props.unaryBatchSizeMaxMetricsCount ?? 1000,
+      'unaryBatchSizeMaxMetricsCount'
+    );
+    validateBatchSize(
+      props.preaggregatedBatchMaxMetricsCount ?? 1000,
+      'preaggregatedBatchMaxMetricsCount'
+    );
+    validateBatchAgeSeconds(
+      props.unaryBatchMaxAgeSeconds ?? 10,
+      'unaryBatchMaxAgeSeconds'
+    );
+    validateBatchAgeSeconds(
+      props.preaggregatedBatchMaxAgeSeconds ?? 10,
+      'preaggregatedBatchMaxAgeSeconds'
+    );
     const client = this.opentelemetryClient({
       metricDimensions: props.metricDimensions ?? new Map<string, Dimension>(),
       resourceDimensions:
@@ -184,6 +326,7 @@ export class MetricsSetups {
     });
     const preaggregatedSink = this.configureBatchedPreaggregatedLightstepSink({
       aggregationWidthMillis: props.aggregationWidthMillis,
+      metricDimensions: props.metricDimensions,
       batchMaxAgeSeconds: props.preaggregatedBatchMaxAgeSeconds ?? 10,
       batchSize: props.preaggregatedBatchMaxMetricsCount ?? 1000,
       client: client,
@@ -294,7 +437,7 @@ export class MetricsSetups {
 
   private static configureBatchedUnaryLightstepSink(
     props: ConfigureBatchedUnaryLightstepSinkProps
-  ): SynchronizingBuffer {
+  ): MetricsSink {
     const unarySink = new SynchronizingBuffer();
     const unaryBatcher = new Batcher({
       upstream: unarySink,
@@ -302,12 +445,9 @@ export class MetricsSetups {
       batchAgeSeconds: props.batchMaxAgeSeconds,
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
-    csp.go(async function* () {
+    void (async () => {
       for await (const batch of unaryBatcher.consume()) {
         if (batch.length === 0) {
-          console.log('batch array has no length, no metrics to send');
-          yield;
           continue;
         }
         try {
@@ -316,18 +456,26 @@ export class MetricsSetups {
         } catch (e) {
           props.logError('failed to send unary batch', e);
         }
-        yield;
       }
-    });
+    })();
 
-    return unarySink;
+    return {
+      emit(metrics: _Metrics): void {
+        unarySink.emit(metrics);
+      },
+      close(): void {
+        unaryBatcher.close();
+        unarySink.close();
+      },
+    };
   }
 
   private static configureBatchedPreaggregatedLightstepSink(
     props: ConfigureBatchedPreaggregatedLightstepSinkProps
-  ): Aggregator {
+  ): MetricsSink {
     const sink = new Aggregator({
       aggregationWidthMillis: props.aggregationWidthMillis,
+      metricDimensions: props.metricDimensions,
     });
     const aggregatedBatcher = new Batcher({
       upstream: sink,
@@ -335,12 +483,9 @@ export class MetricsSetups {
       batchAgeSeconds: props.batchMaxAgeSeconds,
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
-    csp.go(async function* () {
+    void (async () => {
       for await (const batch of aggregatedBatcher.consume()) {
         if (batch.length === 0) {
-          console.log('batch array has no length, no aggregated batch to send');
-          yield;
           continue;
         }
         try {
@@ -349,11 +494,18 @@ export class MetricsSetups {
         } catch (e) {
           props.logError('failed to send aggregated batch', e);
         }
-        yield;
       }
-    });
+    })();
 
-    return sink;
+    return {
+      emit(metrics: _Metrics): void {
+        sink.emit(metrics);
+      },
+      close(): void {
+        aggregatedBatcher.close();
+        sink.close();
+      },
+    };
   }
 
   static opentelemetryClient(

@@ -5,9 +5,31 @@ import {
   bucketBase2,
   bucketBelow,
 } from '@src/goodmetrics/pipeline/aggregator';
-import {_Metrics, NumberDimension} from '@src/goodmetrics/_Metrics';
+import {
+  _Metrics,
+  Dimension,
+  NumberDimension,
+  StringDimension,
+} from '@src/goodmetrics/_Metrics';
 import {StatisticSet} from '@src/goodmetrics/data/StatisticSet';
 import {Histogram} from '@src/goodmetrics/data/Histogram';
+
+class CustomDimension extends Dimension {
+  constructor(
+    name: string,
+    private readonly value: string
+  ) {
+    super(name);
+  }
+
+  asOtlpKeyValue(): ReturnType<Dimension['asOtlpKeyValue']> {
+    return new StringDimension(this.name, this.value).asOtlpKeyValue();
+  }
+
+  asGoodmetricsDimension(): ReturnType<Dimension['asGoodmetricsDimension']> {
+    return new StringDimension(this.name, this.value).asGoodmetricsDimension();
+  }
+}
 
 describe('bucket()', () => {
   it('clamps negative values to 0', () => {
@@ -161,6 +183,122 @@ describe('AggregatedBatch', () => {
 });
 
 describe('Aggregator', () => {
+  it.each([0, -1, NaN, Infinity, -Infinity, 0.5, 1.5, 2_147_483_648])(
+    'rejects unsupported aggregation width %s',
+    aggregationWidthMillis => {
+      expect(() => new Aggregator({aggregationWidthMillis})).toThrow(
+        /aggregationWidthMillis/
+      );
+    }
+  );
+
+  it.each([1, 2_147_483_647])(
+    'accepts supported aggregation width %s',
+    aggregationWidthMillis => {
+      expect(() => new Aggregator({aggregationWidthMillis})).not.toThrow();
+    }
+  );
+
+  it('combines records with equivalent effective shared dimensions', async () => {
+    const aggregator = new Aggregator({
+      aggregationWidthMillis: 20,
+      metricDimensions: new Map([
+        ['region', new StringDimension('region', 'west')],
+      ]),
+    });
+    const implicit = new _Metrics({name: 'orders', timestampMillis: 1});
+    implicit.measure('count', 1);
+    const explicit = new _Metrics({name: 'orders', timestampMillis: 1});
+    explicit.dimension('region', 'west');
+    explicit.measure('count', 1);
+    const override = new _Metrics({name: 'orders', timestampMillis: 1});
+    override.dimension('region', 'east');
+    override.measure('count', 1);
+    aggregator.emit(implicit);
+    aggregator.emit(explicit);
+    aggregator.emit(override);
+
+    const {value} = await aggregator.consume().next();
+    if (!(value instanceof AggregatedBatch)) {
+      throw new Error('expected an aggregated batch');
+    }
+    const datums = value.asGoodmetrics();
+    expect(datums).toHaveLength(2);
+    const west = datums.find(
+      datum => datum.dimensions.get('region')?.string === 'west'
+    );
+    const east = datums.find(
+      datum => datum.dimensions.get('region')?.string === 'east'
+    );
+    expect(west?.measurements.get('count')?.statistic_set?.samplecount).toBe(2);
+    expect(east?.measurements.get('count')?.statistic_set?.samplecount).toBe(1);
+    aggregator.close();
+  });
+
+  it('groups custom shared dimensions by their encoded value', async () => {
+    const aggregator = new Aggregator({
+      aggregationWidthMillis: 20,
+      metricDimensions: new Map([
+        ['region', new CustomDimension('region', 'west')],
+      ]),
+    });
+    const implicit = new _Metrics({name: 'orders', timestampMillis: 1});
+    implicit.measure('count', 1);
+    const explicit = new _Metrics({name: 'orders', timestampMillis: 1});
+    explicit.dimension('region', 'west');
+    explicit.measure('count', 2);
+    aggregator.emit(implicit);
+    aggregator.emit(explicit);
+
+    const {value} = await aggregator.consume().next();
+    if (!(value instanceof AggregatedBatch)) {
+      throw new Error('expected an aggregated batch');
+    }
+    const datums = value.asGoodmetrics();
+    expect(datums).toHaveLength(1);
+    expect(datums[0].dimensions.get('region')?.string).toBe('west');
+    expect(
+      datums[0].measurements.get('count')?.statistic_set?.samplecount
+    ).toBe(2);
+    aggregator.close();
+  });
+
+  it('flushes accumulated metrics promptly after the consumer was paused', async () => {
+    jest.useFakeTimers({now: 1000});
+    const aggregator = new Aggregator({aggregationWidthMillis: 20});
+    const batches = aggregator.consume();
+    try {
+      const first = new _Metrics({name: 'first', timestampMillis: 1000});
+      first.measure('count', 1);
+      aggregator.emit(first);
+      const firstBatch = batches.next();
+      await jest.advanceTimersByTimeAsync(20);
+      expect((await firstBatch).value).toBeInstanceOf(AggregatedBatch);
+
+      await jest.advanceTimersByTimeAsync(100);
+      const second = new _Metrics({name: 'second', timestampMillis: 1120});
+      second.measure('count', 1);
+      aggregator.emit(second);
+      const nextBatch = batches.next();
+      let settled = false;
+      void nextBatch.then(() => {
+        settled = true;
+      });
+      await jest.advanceTimersByTimeAsync(25);
+
+      expect(settled).toBe(true);
+      const result = await nextBatch;
+      expect(result.value).toBeInstanceOf(AggregatedBatch);
+      if (result.value instanceof AggregatedBatch) {
+        expect(result.value.asGoodmetrics()[0].metric).toBe('second');
+      }
+    } finally {
+      aggregator.close();
+      await jest.runOnlyPendingTimersAsync();
+      jest.useRealTimers();
+    }
+  });
+
   it('aggregates emitted metrics and yields a batch once the aggregation width elapses', async () => {
     const aggregator = new Aggregator({aggregationWidthMillis: 20});
 
@@ -188,6 +326,26 @@ describe('Aggregator', () => {
 
     const {done} = await aggregator.consume().next();
     expect(done).toBe(true);
+  });
+
+  it('clears a long pending aggregation timer when closed', async () => {
+    jest.useFakeTimers({now: 1000});
+    const aggregator = new Aggregator({
+      aggregationWidthMillis: 2_147_483_647,
+    });
+    try {
+      const pending = aggregator.consume().next();
+      expect(jest.getTimerCount()).toBe(1);
+
+      aggregator.close();
+      await jest.advanceTimersByTimeAsync(0);
+
+      expect(jest.getTimerCount()).toBe(0);
+      expect((await pending).done).toBe(true);
+    } finally {
+      aggregator.close();
+      jest.useRealTimers();
+    }
   });
 
   it('aggregates distribution measurements into a Histogram across repeated emits', async () => {

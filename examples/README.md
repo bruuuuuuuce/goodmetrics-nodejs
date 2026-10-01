@@ -18,3 +18,14 @@ See each file's header comment for required environment variables/backends.
 These are type-checked and compiled as part of `npm run build` (see `tsconfig.json`), so they're
 kept in sync with the library's API, but they aren't executed in CI - most require a real
 downstream (Lightstep, an OTLP collector, or a goodmetrics server) to actually send metrics.
+
+## Direct OTLP/HTTP intake
+
+`MetricsSetups.otlpHttp` and `MetricsSetups.otlpHttpForLambda` send binary OTLP Protobuf to a
+complete HTTP or HTTPS metrics URL ending in `/v1/metrics`. Supply any required authentication
+headers yourself. The existing generic and Lightstep examples use OTLP/gRPC against an Agent or
+collector receiver.
+
+When configured, `metricDimensions` are added to every OTLP data point; a dimension recorded on
+an individual metric takes precedence if its name matches a shared dimension. Preaggregated
+metrics group records by these effective dimensions.
