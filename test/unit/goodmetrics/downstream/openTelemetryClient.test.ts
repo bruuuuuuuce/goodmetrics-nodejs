@@ -1,10 +1,10 @@
 import {
   OpenTelemetryClient,
   SecurityMode,
-} from '../../../../src/goodmetrics/downstream/openTelemetryClient';
-import {_Metrics, StringDimension} from '../../../../src/goodmetrics/_Metrics';
-import {AggregatedBatch} from '../../../../src/goodmetrics/pipeline/aggregator';
-import {StatisticSet} from '../../../../src/goodmetrics/data/StatisticSet';
+} from '@src/goodmetrics/downstream/openTelemetryClient';
+import {_Metrics, StringDimension} from '@src/goodmetrics/_Metrics';
+import {AggregatedBatch} from '@src/goodmetrics/pipeline/aggregator';
+import {StatisticSet} from '@src/goodmetrics/data/StatisticSet';
 import {otlp_metric_service, otlp_metrics} from 'otlp-generated';
 
 type ExportRequest = InstanceType<

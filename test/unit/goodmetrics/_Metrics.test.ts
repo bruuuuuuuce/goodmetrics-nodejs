@@ -4,7 +4,7 @@ import {
   MetricsBehavior,
   NumberDimension,
   StringDimension,
-} from '../../../src/goodmetrics/_Metrics';
+} from '@src/goodmetrics/_Metrics';
 
 describe('_Metrics', () => {
   it('records dimensions of each supported type via dimension()', () => {

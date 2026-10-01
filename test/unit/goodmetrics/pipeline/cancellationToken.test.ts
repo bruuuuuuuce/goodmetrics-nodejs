@@ -1,4 +1,4 @@
-import {CancellationToken} from '../../../../src/goodmetrics/pipeline/cancellationToken';
+import {CancellationToken} from '@src/goodmetrics/pipeline/cancellationToken';
 
 describe('CancellationToken', () => {
   it('starts out not cancelled', () => {

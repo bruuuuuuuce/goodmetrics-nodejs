@@ -18,6 +18,11 @@
       "experimentalDecorators": true,
       "strictPropertyInitialization": false,
       "typeRoots": ["node_modules/@types"],
+      "baseUrl": ".",
+      "paths": {
+        "@src": ["src/index.ts"],
+        "@src/*": ["src/*"]
+      },
       "outDir": "dist"
     },
     "include": [

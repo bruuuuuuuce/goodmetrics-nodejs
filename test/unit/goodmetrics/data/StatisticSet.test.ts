@@ -1,4 +1,4 @@
-import {StatisticSet} from '../../../../src/goodmetrics/data/StatisticSet';
+import {StatisticSet} from '@src/goodmetrics/data/StatisticSet';
 
 describe('StatisticSet', () => {
   it('tracks min/max/sum/count as values are accumulated', () => {
