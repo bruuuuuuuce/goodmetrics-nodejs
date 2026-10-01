@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.11.0](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.10.0...v0.11.0) (2026-10-01)
+
+
+### Features
+
+* accept arrays for metric and shared dimensions ([#86](https://github.com/bruuuuuuuce/goodmetrics-nodejs/issues/86)) ([f2167d8](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/f2167d8eb985c169847853d365349408fbba6885))
+* accept arrays for resource dimensions ([#85](https://github.com/bruuuuuuuce/goodmetrics-nodejs/issues/85)) ([ee13a0e](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/ee13a0e70236ea0a363d50fc09c23302c54c7f99))
+* add direct Datadog OTLP/HTTP intake ([#82](https://github.com/bruuuuuuuce/goodmetrics-nodejs/issues/82)) ([47a5548](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/47a5548d4d99856eb063d10156c75dc59eeabbe9))
+* add direct Grafana Cloud OTLP/HTTP intake ([#79](https://github.com/bruuuuuuuce/goodmetrics-nodejs/issues/79)) ([b2dd5ed](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/b2dd5ed149c616e564c3e0fd02a6e2a7848d5717))
+* add generic OTLP/HTTP metrics export ([#81](https://github.com/bruuuuuuuce/goodmetrics-nodejs/issues/81)) ([63c95b2](https://github.com/bruuuuuuuce/goodmetrics-nodejs/commit/63c95b23fce54777a67b77d2cd43b614e897a07f))
+
 ## [0.10.0](https://github.com/bruuuuuuuce/goodmetrics-nodejs/compare/v0.9.1...v0.10.0) (2026-09-19)
 
 
