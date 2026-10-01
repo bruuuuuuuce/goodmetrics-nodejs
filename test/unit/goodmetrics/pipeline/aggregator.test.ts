@@ -328,6 +328,26 @@ describe('Aggregator', () => {
     expect(done).toBe(true);
   });
 
+  it('clears a long pending aggregation timer when closed', async () => {
+    jest.useFakeTimers({now: 1000});
+    const aggregator = new Aggregator({
+      aggregationWidthMillis: 2_147_483_647,
+    });
+    try {
+      const pending = aggregator.consume().next();
+      expect(jest.getTimerCount()).toBe(1);
+
+      aggregator.close();
+      await jest.advanceTimersByTimeAsync(0);
+
+      expect(jest.getTimerCount()).toBe(0);
+      expect((await pending).done).toBe(true);
+    } finally {
+      aggregator.close();
+      jest.useRealTimers();
+    }
+  });
+
   it('aggregates distribution measurements into a Histogram across repeated emits', async () => {
     const aggregator = new Aggregator({aggregationWidthMillis: 20});
 

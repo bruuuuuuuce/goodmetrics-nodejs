@@ -236,6 +236,7 @@ export class Aggregator
   private readonly aggregationWidthMillis: number;
   private readonly metricDimensions: Map<string, Dimension>;
   private readonly cancellationToken: CancellationToken;
+  private readonly pendingDelays = new Set<() => void>();
   private currentBatch: MetricsMap;
   private lastEmit: number;
 
@@ -253,17 +254,19 @@ export class Aggregator
     this.cancellationToken = new CancellationToken();
   }
 
-  private delay = async (millis: number): Promise<void> => {
-    let timeoutId: NodeJS.Timeout | undefined;
-    try {
-      return await new Promise<void>(resolve => {
-        timeoutId = setTimeout(() => {
-          resolve();
-        }, millis);
-      });
-    } finally {
-      clearTimeout(timeoutId);
+  private delay = (millis: number): Promise<void> => {
+    if (this.cancellationToken.isCancelled()) {
+      return Promise.resolve();
     }
+    return new Promise<void>(resolve => {
+      const complete = (): void => {
+        clearTimeout(timeoutId);
+        this.pendingDelays.delete(complete);
+        resolve();
+      };
+      const timeoutId = setTimeout(complete, millis);
+      this.pendingDelays.add(complete);
+    });
   };
 
   async *consume(): AsyncGenerator<AggregatedBatch, void, void> {
@@ -281,6 +284,9 @@ export class Aggregator
       // A slow downstream send may pause consume() across several windows.
       // Flush on the next aligned boundary and account for the full interval.
       await this.delay(Math.max(0, nextEmit - now));
+      if (this.cancellationToken.isCancelled()) {
+        return;
+      }
       this.lastEmit = nextEmit;
       const batch = this.currentBatch;
       this.currentBatch = new Map();
@@ -345,5 +351,8 @@ export class Aggregator
 
   close(): void {
     this.cancellationToken.cancel();
+    for (const complete of this.pendingDelays) {
+      complete();
+    }
   }
 }
