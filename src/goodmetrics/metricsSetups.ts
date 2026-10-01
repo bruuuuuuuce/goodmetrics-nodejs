@@ -2,10 +2,10 @@ import {LogLevel, MetricsFactory, TotaltimeType} from './metricsFactory';
 import {
   _Metrics,
   Dimension,
-  MetricDimension,
+  MetricDimensions,
   Metrics,
   ResourceDimensions,
-  SharedDimension,
+  SharedDimensions,
 } from './_Metrics';
 import {
   OpenTelemetryClient,
@@ -89,7 +89,7 @@ interface RawNativeLambdaOtlpForLambdaProps {
    * Include resource dimensions on each metric instead of on the Resource. You'd use this for
    * downstreams that either do not support or do something undesirable with Resource dimensions.
    */
-  sharedDimensions: SharedDimension;
+  sharedDimensions: SharedDimensions;
   /**
    * example `ingest.lightstep.com`
    */
@@ -118,7 +118,7 @@ interface ConfigureBatchedUnaryLightstepSinkProps {
 
 interface ConfigureBatchedPreaggregatedLightstepSinkProps {
   aggregationWidthMillis?: number;
-  metricDimensions?: MetricDimension;
+  metricDimensions?: MetricDimensions;
   batchSize: number;
   batchMaxAgeSeconds: number;
   client: OtlpMetricsExporter;
@@ -130,14 +130,14 @@ interface PrivateOtelClientProps {
   headers: Header[];
   ingestUrl: string;
   ingestPort: number;
-  metricDimensions: MetricDimension;
+  metricDimensions: MetricDimensions;
   resourceDimensions: ResourceDimensions;
 }
 
 interface LightstepNativeOtlpProps {
   lightstepAccessToken: string;
   aggregationWidthMillis: number;
-  metricDimensions?: MetricDimension;
+  metricDimensions?: MetricDimensions;
   resourceDimensions?: ResourceDimensions;
   logError: (message: string, error: unknown) => void;
   lightstepUrl?: string;
@@ -163,7 +163,7 @@ interface OtlpHttpLambdaProps {
   endpointUrl: string;
   headers?: Record<string, string>;
   resourceDimensions: ResourceDimensions;
-  metricDimensions?: MetricDimension;
+  metricDimensions?: MetricDimensions;
   timeoutMillis?: number;
   logError: (message: string, error: unknown) => void;
   doLogSuccess?: boolean;
@@ -175,7 +175,7 @@ interface OtlpHttpBatchProps {
   endpointUrl: string;
   headers?: Record<string, string>;
   resourceDimensions: ResourceDimensions;
-  metricDimensions?: MetricDimension;
+  metricDimensions?: MetricDimensions;
   timeoutMillis?: number;
   aggregationWidthMillis?: number;
   unaryBatchSizeMaxMetricsCount?: number;

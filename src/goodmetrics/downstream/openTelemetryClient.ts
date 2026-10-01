@@ -1,4 +1,4 @@
-import {MetricDimension, ResourceDimensions, _Metrics} from '../_Metrics';
+import {MetricDimensions, ResourceDimensions, _Metrics} from '../_Metrics';
 import {otlp_metric_service, otlp_metrics} from 'otlp-generated';
 import ResourceMetrics = otlp_metrics.opentelemetry.proto.metrics.v1.ResourceMetrics;
 import MetricsServiceClient = otlp_metric_service.opentelemetry.proto.collector.metrics.v1.MetricsServiceClient;
@@ -16,7 +16,7 @@ interface OpenTelemetryClientProps {
   address: string;
   channelCredentials: ChannelCredentials;
   resourceDimensions: ResourceDimensions;
-  metricDimensions: MetricDimension;
+  metricDimensions: MetricDimensions;
   timeoutMillis: number;
   logRawPayload?: (resourceMetrics: ResourceMetrics) => void;
   interceptors: Interceptor[];
@@ -26,7 +26,7 @@ interface ConnectProps {
   sillyOtlpHostname?: string;
   port?: number;
   resourceDimensions: ResourceDimensions;
-  metricDimensions: MetricDimension;
+  metricDimensions: MetricDimensions;
   securityMode?: SecurityMode;
   timeoutMillis?: number;
   logRawPayload?: (resourceMetrics: ResourceMetrics) => void;

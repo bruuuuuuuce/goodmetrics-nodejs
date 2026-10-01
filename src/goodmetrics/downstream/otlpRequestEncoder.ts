@@ -1,6 +1,6 @@
 import {
   DimensionCollection,
-  MetricDimension,
+  MetricDimensions,
   ResourceDimensions,
   _Metrics,
 } from '../_Metrics';
@@ -20,7 +20,7 @@ import Resource = otlp_resource.opentelemetry.proto.resource.v1.Resource;
 
 interface OtlpRequestEncoderProps {
   resourceDimensions: ResourceDimensions;
-  metricDimensions: MetricDimension;
+  metricDimensions: MetricDimensions;
   logRawPayload?: (resourceMetrics: ResourceMetrics) => void;
 }
 
