@@ -1,8 +1,8 @@
-import {GoodmetricsClient} from '../../src/goodmetrics/downstream/goodmetricsClient';
-import {SecurityMode} from '../../src/goodmetrics/downstream/openTelemetryClient';
-import {_Metrics, StringDimension} from '../../src/goodmetrics/_Metrics';
-import {AggregatedBatch} from '../../src/goodmetrics/pipeline/aggregator';
-import {StatisticSet} from '../../src/goodmetrics/data/StatisticSet';
+import {GoodmetricsClient} from '@src/goodmetrics/downstream/goodmetricsClient';
+import {SecurityMode} from '@src/goodmetrics/downstream/openTelemetryClient';
+import {_Metrics, StringDimension} from '@src/goodmetrics/_Metrics';
+import {AggregatedBatch} from '@src/goodmetrics/pipeline/aggregator';
+import {StatisticSet} from '@src/goodmetrics/data/StatisticSet';
 import {goodmetrics} from 'goodmetrics-generated';
 
 type MetricsRequest = InstanceType<typeof goodmetrics.MetricsRequest>;

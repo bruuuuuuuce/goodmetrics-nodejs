@@ -4,10 +4,10 @@ import {
   bucket,
   bucketBase2,
   bucketBelow,
-} from '../../src/goodmetrics/pipeline/aggregator';
-import {_Metrics, NumberDimension} from '../../src/goodmetrics/_Metrics';
-import {StatisticSet} from '../../src/goodmetrics/data/StatisticSet';
-import {Histogram} from '../../src/goodmetrics/data/Histogram';
+} from '@src/goodmetrics/pipeline/aggregator';
+import {_Metrics, NumberDimension} from '@src/goodmetrics/_Metrics';
+import {StatisticSet} from '@src/goodmetrics/data/StatisticSet';
+import {Histogram} from '@src/goodmetrics/data/Histogram';
 
 describe('bucket()', () => {
   it('clamps negative values to 0', () => {

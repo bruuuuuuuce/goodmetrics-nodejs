@@ -1,5 +1,5 @@
-import {newNumberDataPoint} from '../../src/goodmetrics/data/otlp/numbersDataPoint';
-import {library} from '../../src/goodmetrics/data/otlp/library';
+import {newNumberDataPoint} from '@src/goodmetrics/data/otlp/numbersDataPoint';
+import {library} from '@src/goodmetrics/data/otlp/library';
 
 describe('newNumberDataPoint()', () => {
   it('encodes integer values as as_int', () => {
