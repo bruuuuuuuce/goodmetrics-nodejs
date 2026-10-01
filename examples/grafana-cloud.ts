@@ -22,12 +22,9 @@ async function main(): Promise<void> {
     endpointUrl: requiredEnv('GRAFANA_CLOUD_OTLP_METRICS_ENDPOINT'),
     instanceId: requiredEnv('GRAFANA_CLOUD_OTLP_INSTANCE_ID'),
     accessPolicyToken: requiredEnv('GRAFANA_CLOUD_ACCESS_POLICY_TOKEN'),
-    resourceDimensions: new Map([
-      [
-        'service.name',
-        new StringDimension('service.name', 'goodmetrics-example'),
-      ],
-    ]),
+    resourceDimensions: [
+      new StringDimension('service.name', 'goodmetrics-example'),
+    ],
     logError(message: string, error: unknown): void {
       console.error(message, error);
     },

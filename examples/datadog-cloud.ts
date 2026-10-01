@@ -22,12 +22,9 @@ async function main(): Promise<void> {
   const metrics = MetricsSetups.datadogOtlpHttpForLambda({
     endpointUrl: requiredEnv('DATADOG_OTLP_METRICS_ENDPOINT'),
     apiKey: requiredEnv('DD_API_KEY'),
-    resourceDimensions: new Map([
-      [
-        'service.name',
-        new StringDimension('service.name', 'goodmetrics-example'),
-      ],
-    ]),
+    resourceDimensions: [
+      new StringDimension('service.name', 'goodmetrics-example'),
+    ],
     logError(message: string, error: unknown): void {
       console.error(message, error);
     },

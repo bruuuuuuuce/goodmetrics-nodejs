@@ -1,5 +1,5 @@
 import {LogLevel, MetricsFactory, TotaltimeType} from './metricsFactory';
-import {_Metrics, Dimension, Metrics} from './_Metrics';
+import {_Metrics, Dimension, Metrics, ResourceDimensions} from './_Metrics';
 import {
   OpenTelemetryClient,
   SecurityMode,
@@ -41,7 +41,7 @@ interface LightstepNativeLambdaOtlpProps {
   /**
    * Included resource dimensions on the OTLP resource. Ex. AWS_REGION, ACCOUNT_ID etc...
    */
-  resourceDimensions: Map<string, Dimension>;
+  resourceDimensions: ResourceDimensions;
   /**
    * defaults to `ingest.lightstep.com`, the default lightstep ingest url
    */
@@ -77,7 +77,7 @@ interface RawNativeLambdaOtlpForLambdaProps {
   /**
    * Included resource dimensions on the OTLP resource. Ex. AWS_REGION, ACCOUNT_ID etc...
    */
-  resourceDimensions: Map<string, Dimension>;
+  resourceDimensions: ResourceDimensions;
   /**
    * Include resource dimensions on each metric instead of on the Resource. You'd use this for
    * downstreams that either do not support or do something undesirable with Resource dimensions.
@@ -124,14 +124,14 @@ interface PrivateOtelClientProps {
   ingestUrl: string;
   ingestPort: number;
   metricDimensions: Map<string, Dimension>;
-  resourceDimensions: Map<string, Dimension>;
+  resourceDimensions: ResourceDimensions;
 }
 
 interface LightstepNativeOtlpProps {
   lightstepAccessToken: string;
   aggregationWidthMillis: number;
   metricDimensions?: Map<string, Dimension>;
-  resourceDimensions?: Map<string, Dimension>;
+  resourceDimensions?: ResourceDimensions;
   logError: (message: string, error: unknown) => void;
   lightstepUrl?: string;
   lightstepPort?: number;
@@ -155,7 +155,7 @@ interface GoodmetricsSetupProps {
 interface OtlpHttpLambdaProps {
   endpointUrl: string;
   headers?: Record<string, string>;
-  resourceDimensions: Map<string, Dimension>;
+  resourceDimensions: ResourceDimensions;
   metricDimensions?: Map<string, Dimension>;
   timeoutMillis?: number;
   logError: (message: string, error: unknown) => void;
@@ -167,7 +167,7 @@ interface OtlpHttpLambdaProps {
 interface OtlpHttpBatchProps {
   endpointUrl: string;
   headers?: Record<string, string>;
-  resourceDimensions: Map<string, Dimension>;
+  resourceDimensions: ResourceDimensions;
   metricDimensions?: Map<string, Dimension>;
   timeoutMillis?: number;
   aggregationWidthMillis?: number;

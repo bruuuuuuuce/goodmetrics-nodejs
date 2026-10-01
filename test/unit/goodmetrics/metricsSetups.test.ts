@@ -184,13 +184,13 @@ it('sends Datadog API key with a blocking metric export', async () => {
   expect(logError).not.toHaveBeenCalled();
 });
 
-it('sends Datadog API key with a batched metric export', async () => {
+it('sends Datadog API key and array resource dimensions with a batched export', async () => {
   const received: Received[] = [];
   const endpointUrl = await receiver(received);
   const configured = MetricsSetups.datadogOtlpHttp({
     endpointUrl,
     apiKey: 'dd-secret',
-    resourceDimensions: new Map<string, Dimension>(),
+    resourceDimensions: [new StringDimension('service.name', 'checkout')],
     logError: jest.fn(),
     unaryBatchSizeMaxMetricsCount: 1,
   });
@@ -211,16 +211,20 @@ it('sends Datadog API key with a batched metric export', async () => {
   expect(received[0].method).toBe('POST');
   expect(received[0].headers['dd-api-key']).toBe('dd-secret');
   expect(received[0].names).toContain('orders_count');
+  expect(received[0].resourceAttributes).toContainEqual({
+    key: 'service.name',
+    value: 'checkout',
+  });
 });
 
-it('encodes Grafana Cloud Basic auth from instance ID and a Unicode token', async () => {
+it('sends Grafana Basic auth and array resource dimensions', async () => {
   const received: Received[] = [];
   const endpointUrl = await receiver(received);
   const factory = MetricsSetups.grafanaCloudOtlpHttpForLambda({
     endpointUrl,
     instanceId: '123',
     accessPolicyToken: 'tokén:part',
-    resourceDimensions: new Map<string, Dimension>(),
+    resourceDimensions: [new StringDimension('service.name', 'checkout')],
     logError: jest.fn(),
   });
   factories.push(factory);
@@ -234,6 +238,10 @@ it('encodes Grafana Cloud Basic auth from instance ID and a Unicode token', asyn
     `Basic ${Buffer.from('123:tokén:part', 'utf8').toString('base64')}`
   );
   expect(received[0].names).toContain('orders_count');
+  expect(received[0].resourceAttributes).toContainEqual({
+    key: 'service.name',
+    value: 'checkout',
+  });
 });
 
 it('uses the existing unary and preaggregated factories for batched HTTP', async () => {
