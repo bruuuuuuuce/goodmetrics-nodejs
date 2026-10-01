@@ -7,11 +7,29 @@ import {
 } from '@src/goodmetrics/pipeline/aggregator';
 import {
   _Metrics,
+  Dimension,
   NumberDimension,
   StringDimension,
 } from '@src/goodmetrics/_Metrics';
 import {StatisticSet} from '@src/goodmetrics/data/StatisticSet';
 import {Histogram} from '@src/goodmetrics/data/Histogram';
+
+class CustomDimension extends Dimension {
+  constructor(
+    name: string,
+    private readonly value: string
+  ) {
+    super(name);
+  }
+
+  asOtlpKeyValue(): ReturnType<Dimension['asOtlpKeyValue']> {
+    return new StringDimension(this.name, this.value).asOtlpKeyValue();
+  }
+
+  asGoodmetricsDimension(): ReturnType<Dimension['asGoodmetricsDimension']> {
+    return new StringDimension(this.name, this.value).asGoodmetricsDimension();
+  }
+}
 
 describe('bucket()', () => {
   it('clamps negative values to 0', () => {
@@ -165,7 +183,7 @@ describe('AggregatedBatch', () => {
 });
 
 describe('Aggregator', () => {
-  it.each([0, -1, NaN, Infinity, -Infinity, 0.5, 2_147_483_648])(
+  it.each([0, -1, NaN, Infinity, -Infinity, 0.5, 1.5, 2_147_483_648])(
     'rejects unsupported aggregation width %s',
     aggregationWidthMillis => {
       expect(() => new Aggregator({aggregationWidthMillis})).toThrow(
@@ -214,6 +232,34 @@ describe('Aggregator', () => {
     );
     expect(west?.measurements.get('count')?.statistic_set?.samplecount).toBe(2);
     expect(east?.measurements.get('count')?.statistic_set?.samplecount).toBe(1);
+    aggregator.close();
+  });
+
+  it('groups custom shared dimensions by their encoded value', async () => {
+    const aggregator = new Aggregator({
+      aggregationWidthMillis: 20,
+      metricDimensions: new Map([
+        ['region', new CustomDimension('region', 'west')],
+      ]),
+    });
+    const implicit = new _Metrics({name: 'orders', timestampMillis: 1});
+    implicit.measure('count', 1);
+    const explicit = new _Metrics({name: 'orders', timestampMillis: 1});
+    explicit.dimension('region', 'west');
+    explicit.measure('count', 2);
+    aggregator.emit(implicit);
+    aggregator.emit(explicit);
+
+    const {value} = await aggregator.consume().next();
+    if (!(value instanceof AggregatedBatch)) {
+      throw new Error('expected an aggregated batch');
+    }
+    const datums = value.asGoodmetrics();
+    expect(datums).toHaveLength(1);
+    expect(datums[0].dimensions.get('region')?.string).toBe('west');
+    expect(
+      datums[0].measurements.get('count')?.statistic_set?.samplecount
+    ).toBe(2);
     aggregator.close();
   });
 
@@ -280,6 +326,26 @@ describe('Aggregator', () => {
 
     const {done} = await aggregator.consume().next();
     expect(done).toBe(true);
+  });
+
+  it('clears a long pending aggregation timer when closed', async () => {
+    jest.useFakeTimers({now: 1000});
+    const aggregator = new Aggregator({
+      aggregationWidthMillis: 2_147_483_647,
+    });
+    try {
+      const pending = aggregator.consume().next();
+      expect(jest.getTimerCount()).toBe(1);
+
+      aggregator.close();
+      await jest.advanceTimersByTimeAsync(0);
+
+      expect(jest.getTimerCount()).toBe(0);
+      expect((await pending).done).toBe(true);
+    } finally {
+      aggregator.close();
+      jest.useRealTimers();
+    }
   });
 
   it('aggregates distribution measurements into a Histogram across repeated emits', async () => {

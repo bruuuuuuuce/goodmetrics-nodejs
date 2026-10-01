@@ -41,6 +41,19 @@ describe('Batcher', () => {
     ).not.toThrow();
   });
 
+  it('rejects batch ages above the maximum supported seconds', () => {
+    expect(
+      () =>
+        new Batcher({
+          upstream: upstreamOf([]),
+          batchAgeSeconds: 2_147_483.001,
+        })
+    ).toThrow('batchAgeSeconds must be between 0 and 2,147,483 seconds');
+    expect(
+      () => new Batcher({upstream: upstreamOf([]), batchAgeSeconds: 2_147_483})
+    ).not.toThrow();
+  });
+
   it('yields a batch as soon as batchSize items are available', async () => {
     const upstream = upstreamOf(['a', 'b', 'c', 'd']);
     const batcher = new Batcher({

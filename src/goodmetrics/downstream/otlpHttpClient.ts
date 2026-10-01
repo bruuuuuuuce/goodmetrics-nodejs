@@ -43,9 +43,13 @@ export class OtlpHttpClient implements OtlpMetricsExporter {
     }
     if (
       props.timeoutMillis !== undefined &&
-      (!Number.isFinite(props.timeoutMillis) || props.timeoutMillis <= 0)
+      (!Number.isFinite(props.timeoutMillis) ||
+        props.timeoutMillis < 1 ||
+        props.timeoutMillis > 2_147_483_647)
     ) {
-      throw new Error('OTLP HTTP timeoutMillis must be positive');
+      throw new RangeError(
+        'OTLP HTTP timeoutMillis must be between 1 and 2147483647'
+      );
     }
     this.endpoint = endpoint;
     this.headers = {...props.headers};
