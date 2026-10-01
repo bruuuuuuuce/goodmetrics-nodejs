@@ -28,5 +28,7 @@ export {
 };
 export type {
   DimensionCollection,
+  MetricDimension,
   ResourceDimensions,
+  SharedDimension,
 } from './goodmetrics/_Metrics';

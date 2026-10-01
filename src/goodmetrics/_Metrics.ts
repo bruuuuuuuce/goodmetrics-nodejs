@@ -30,6 +30,8 @@ export abstract class Dimension {
 export type DimensionCollection =
   ReadonlyMap<string, Dimension> | readonly Dimension[];
 export type ResourceDimensions = DimensionCollection;
+export type MetricDimension = DimensionCollection;
+export type SharedDimension = DimensionCollection;
 
 export class StringDimension extends Dimension {
   readonly value: string;

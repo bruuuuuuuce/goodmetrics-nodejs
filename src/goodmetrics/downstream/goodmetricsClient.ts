@@ -1,4 +1,4 @@
-import {_Metrics, Dimension, DimensionCollection} from '../_Metrics';
+import {_Metrics, Dimension, SharedDimension} from '../_Metrics';
 import {goodmetrics} from 'goodmetrics-generated';
 import MetricsClient = goodmetrics.MetricsClient;
 import {ChannelCredentials, Interceptor} from '@grpc/grpc-js';
@@ -24,7 +24,7 @@ interface GoodmetricsConnectProps {
    * Dimensions to attach to every batch this client sends, via `MetricsRequest.shared_dimensions`.
    * Defaults to no shared dimensions.
    */
-  sharedDimensions?: DimensionCollection;
+  sharedDimensions?: SharedDimension;
 }
 
 export class GoodmetricsClient {

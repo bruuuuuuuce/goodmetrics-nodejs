@@ -1,4 +1,9 @@
-import {DimensionCollection, ResourceDimensions, _Metrics} from '../_Metrics';
+import {
+  DimensionCollection,
+  MetricDimension,
+  ResourceDimensions,
+  _Metrics,
+} from '../_Metrics';
 import {AggregatedBatch} from '../pipeline/aggregator';
 import {library} from '../data/otlp/library';
 import {
@@ -15,7 +20,7 @@ import Resource = otlp_resource.opentelemetry.proto.resource.v1.Resource;
 
 interface OtlpRequestEncoderProps {
   resourceDimensions: ResourceDimensions;
-  metricDimensions: DimensionCollection;
+  metricDimensions: MetricDimension;
   logRawPayload?: (resourceMetrics: ResourceMetrics) => void;
 }
 

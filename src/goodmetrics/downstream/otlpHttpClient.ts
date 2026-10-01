@@ -1,6 +1,6 @@
 import * as http from 'http';
 import * as https from 'https';
-import {DimensionCollection, ResourceDimensions, _Metrics} from '../_Metrics';
+import {MetricDimension, ResourceDimensions, _Metrics} from '../_Metrics';
 import {AggregatedBatch} from '../pipeline/aggregator';
 import {OtlpMetricsExporter} from './otlpMetricsExporter';
 import {OtlpRequestEncoder} from './otlpRequestEncoder';
@@ -10,7 +10,7 @@ interface ConnectProps {
   endpointUrl: string;
   headers?: Record<string, string>;
   resourceDimensions: ResourceDimensions;
-  metricDimensions: DimensionCollection;
+  metricDimensions: MetricDimension;
   timeoutMillis?: number;
 }
 
