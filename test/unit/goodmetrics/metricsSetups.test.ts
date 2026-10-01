@@ -184,6 +184,35 @@ it('sends Datadog API key with a blocking metric export', async () => {
   expect(logError).not.toHaveBeenCalled();
 });
 
+it('sends Datadog API key with a batched metric export', async () => {
+  const received: Received[] = [];
+  const endpointUrl = await receiver(received);
+  const configured = MetricsSetups.datadogOtlpHttp({
+    endpointUrl,
+    apiKey: 'dd-secret',
+    resourceDimensions: new Map<string, Dimension>(),
+    logError: jest.fn(),
+    unaryBatchSizeMaxMetricsCount: 1,
+  });
+  factories.push(
+    configured.unaryMetricsFactory,
+    configured.preaggregatedMetricsFactory
+  );
+
+  await configured.unaryMetricsFactory.record({name: 'orders'}, metrics =>
+    metrics.measure('count', 1)
+  );
+  const deadline = Date.now() + 2000;
+  while (received.length === 0 && Date.now() < deadline) {
+    await new Promise(resolve => setTimeout(resolve, 10));
+  }
+
+  expect(received).toHaveLength(1);
+  expect(received[0].method).toBe('POST');
+  expect(received[0].headers['dd-api-key']).toBe('dd-secret');
+  expect(received[0].names).toContain('orders_count');
+});
+
 it('uses the existing unary and preaggregated factories for batched HTTP', async () => {
   const received: Received[] = [];
   const endpointUrl = await receiver(received);
