@@ -181,6 +181,11 @@ interface OtlpHttpBatchProps {
   logLevel?: LogLevel;
 }
 
+type DatadogBatchProps = Omit<OtlpHttpBatchProps, 'headers'> & {apiKey: string};
+type DatadogLambdaProps = Omit<OtlpHttpLambdaProps, 'headers'> & {
+  apiKey: string;
+};
+
 export class MetricsSetups {
   static otlpHttp(props: OtlpHttpBatchProps): ConfiguredMetrics {
     validateAggregationWidthMillis(props.aggregationWidthMillis ?? 10 * 1000);
@@ -264,6 +269,16 @@ export class MetricsSetups {
       totalTimeType: TotaltimeType.DistributionMilliseconds,
       logLevel: props.logLevel,
     });
+  }
+
+  static datadogOtlpHttp(props: DatadogBatchProps): ConfiguredMetrics {
+    const {apiKey, ...rest} = props;
+    return this.otlpHttp({...rest, headers: {'dd-api-key': apiKey}});
+  }
+
+  static datadogOtlpHttpForLambda(props: DatadogLambdaProps): MetricsFactory {
+    const {apiKey, ...rest} = props;
+    return this.otlpHttpForLambda({...rest, headers: {'dd-api-key': apiKey}});
   }
 
   static goodMetrics(props?: GoodmetricsSetupProps): ConfiguredMetrics {

@@ -52,6 +52,28 @@ afterEach(async () => {
   }
 });
 
+it('sends Datadog API key with a blocking metric export', async () => {
+  const received: Received[] = [];
+  const endpointUrl = await receiver(received);
+  const logError = jest.fn();
+  const factory = MetricsSetups.datadogOtlpHttpForLambda({
+    endpointUrl,
+    apiKey: 'dd-secret',
+    resourceDimensions: new Map<string, Dimension>(),
+    logError,
+  });
+  factories.push(factory);
+
+  await factory.record({name: 'orders'}, metrics =>
+    metrics.measure('count', 1)
+  );
+
+  expect(received).toHaveLength(1);
+  expect(received[0].headers['dd-api-key']).toBe('dd-secret');
+  expect(received[0].names).toContain('orders_count');
+  expect(logError).not.toHaveBeenCalled();
+});
+
 it('uses the existing unary and preaggregated factories for batched HTTP', async () => {
   const received: Received[] = [];
   const endpointUrl = await receiver(received);
