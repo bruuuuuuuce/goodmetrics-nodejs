@@ -1,19 +1,11 @@
 import {Dimension, _Metrics} from '../_Metrics';
-import {
-  otlp_common,
-  otlp_metrics,
-  otlp_metric_service,
-  otlp_resource,
-} from 'otlp-generated';
+import {otlp_metric_service, otlp_metrics} from 'otlp-generated';
 import ResourceMetrics = otlp_metrics.opentelemetry.proto.metrics.v1.ResourceMetrics;
 import MetricsServiceClient = otlp_metric_service.opentelemetry.proto.collector.metrics.v1.MetricsServiceClient;
-import KeyValue = otlp_common.opentelemetry.proto.common.v1.KeyValue;
-import Resource = otlp_resource.opentelemetry.proto.resource.v1.Resource;
-import ExportMetricsServiceRequest = otlp_metric_service.opentelemetry.proto.collector.metrics.v1.ExportMetricsServiceRequest;
 import {AggregatedBatch} from '../pipeline/aggregator';
-import ScopeMetrics = otlp_metrics.opentelemetry.proto.metrics.v1.ScopeMetrics;
-import {library} from '../data/otlp/library';
 import {ChannelCredentials, Interceptor} from '@grpc/grpc-js';
+import {OtlpRequestEncoder} from './otlpRequestEncoder';
+import {OtlpMetricsExporter} from './otlpMetricsExporter';
 
 export enum SecurityMode {
   Plaintext = 'plaintext',
@@ -41,34 +33,20 @@ interface ConnectProps {
   interceptors: Interceptor[];
 }
 
-function asOtlpDimensions(map: Map<string, Dimension>): KeyValue[] {
-  const keyValues: KeyValue[] = [];
-  map.forEach((dimension, _key) => {
-    const kv = dimension.asOtlpKeyValue();
-    keyValues.push(kv);
-  });
-
-  return keyValues;
-}
-
-export class OpenTelemetryClient {
+export class OpenTelemetryClient implements OtlpMetricsExporter {
   private readonly client: MetricsServiceClient;
   private readonly interceptors: Interceptor[];
-  private readonly resourceDimensions: Resource;
-  private readonly metricDimensions: Resource;
-  private readonly logRawPayload?: (resourceMetrics: ResourceMetrics) => void;
+  private readonly encoder: OtlpRequestEncoder;
   constructor(props: OpenTelemetryClientProps) {
     this.client = new MetricsServiceClient(
       props.address,
       props.channelCredentials
     );
-    this.resourceDimensions = new Resource({
-      attributes: asOtlpDimensions(props.resourceDimensions),
+    this.encoder = new OtlpRequestEncoder({
+      resourceDimensions: props.resourceDimensions,
+      metricDimensions: props.metricDimensions,
+      logRawPayload: props.logRawPayload,
     });
-    this.metricDimensions = new Resource({
-      attributes: asOtlpDimensions(props.metricDimensions),
-    });
-    this.logRawPayload = props.logRawPayload;
     this.interceptors = props.interceptors;
   }
 
@@ -97,14 +75,9 @@ export class OpenTelemetryClient {
   }
 
   sendMetricsBatch(batch: _Metrics[]): Promise<void> {
-    const resourceMetrics = this.asResourceMetrics(batch);
-    this.logRawPayload && this.logRawPayload(resourceMetrics);
-
     return new Promise((resolve, reject) => {
       this.client.Export(
-        new ExportMetricsServiceRequest({
-          resource_metrics: [resourceMetrics],
-        }),
+        this.encoder.unary(batch),
         {interceptors: this.interceptors},
         e => {
           if (!e) {
@@ -122,14 +95,9 @@ export class OpenTelemetryClient {
   }
 
   sendPreaggregatedBatch(batch: AggregatedBatch[]): Promise<void> {
-    const resourceMetricsBatch = this.asResourceMetricsFromBatch(batch);
-    this.logRawPayload && this.logRawPayload(resourceMetricsBatch);
-
     return new Promise((resolve, reject) => {
       this.client.Export(
-        new ExportMetricsServiceRequest({
-          resource_metrics: [resourceMetricsBatch],
-        }),
+        this.encoder.preaggregated(batch),
         {interceptors: this.interceptors},
         e => {
           if (!e) {
@@ -139,29 +107,6 @@ export class OpenTelemetryClient {
           }
         }
       );
-    });
-  }
-
-  private asScopeMetrics(batch: _Metrics[]): ScopeMetrics {
-    return new ScopeMetrics({
-      scope: library,
-      metrics: batch.flatMap(b => b.asGoofyOtlpMetricSequence()),
-    });
-  }
-
-  private asResourceMetrics(batch: _Metrics[]): ResourceMetrics {
-    return new ResourceMetrics({
-      scope_metrics: [this.asScopeMetrics(batch)],
-      resource: this.resourceDimensions,
-    });
-  }
-
-  private asResourceMetricsFromBatch(
-    batch: AggregatedBatch[]
-  ): ResourceMetrics {
-    return new ResourceMetrics({
-      resource: this.resourceDimensions,
-      scope_metrics: batch.map(b => b.asOtlpScopeMetrics()),
     });
   }
 }

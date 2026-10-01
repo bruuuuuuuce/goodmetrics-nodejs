@@ -7,3 +7,5 @@
 dist/
 .vscode/
 .DS_Store
+/docs/superpowers/
+/.superpowers/

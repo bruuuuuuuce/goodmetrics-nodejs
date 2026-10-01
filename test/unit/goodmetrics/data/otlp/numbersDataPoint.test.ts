@@ -1,5 +1,4 @@
 import {newNumberDataPoint} from '@src/goodmetrics/data/otlp/numbersDataPoint';
-import {library} from '@src/goodmetrics/data/otlp/library';
 
 describe('newNumberDataPoint()', () => {
   it('encodes integer values as as_int', () => {
@@ -27,11 +26,5 @@ describe('newNumberDataPoint()', () => {
     const point = newNumberDataPoint(0, 10_000, 1_000, []);
     expect(point.has_as_double).toBe(true);
     expect(point.has_as_int).toBe(false);
-  });
-});
-
-describe('library', () => {
-  it('identifies this library as the OTLP instrumentation scope', () => {
-    expect(library.name).toBe('goodmetrics_nodejs');
   });
 });

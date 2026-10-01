@@ -1,11 +1,14 @@
 # Goodmetrics Nodejs
 
 Nodejs metrics client to be used with either the goodmetrics protocol, or any open telemetry compliant protocol.
-Currently has a built in lightstep open telemetry client.
+Includes OpenTelemetry clients for Lightstep and other OTLP backends, including direct OTLP/HTTP intake.
 
 This library is based off of the opensource [kotlin goodmetrics library](https://github.com/kvc0/goodmetrics_kotlin)
 
 ## Installing
+
+Requires Node.js 22 or newer.
+
 ```bash
 npm i goodmetrics-nodejs
 ```
@@ -36,9 +39,10 @@ const main = async () => {
 main().finally();
 ```
 
-See [`examples/`](./examples) for more - a long-running (non-Lambda) process buffering/batching
-metrics, pointing at any generic OTLP backend (e.g. Datadog), and using the bespoke `goodmetrics`
-protocol instead of OTLP.
+See [`examples/`](./examples) for long-running processes with batching, generic OTLP/gRPC
+receivers, and the bespoke `goodmetrics` protocol. For direct OTLP/HTTP intake, use
+`MetricsSetups.otlpHttp` or `MetricsSetups.otlpHttpForLambda` with a complete `/v1/metrics` URL
+and any required headers.
 
 ## Protos
 - [open telemetry client protos](https://github.com/bruuuuuuuce/otlp-generated)

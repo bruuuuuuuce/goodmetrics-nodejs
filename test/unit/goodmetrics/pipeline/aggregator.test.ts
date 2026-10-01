@@ -5,7 +5,11 @@ import {
   bucketBase2,
   bucketBelow,
 } from '@src/goodmetrics/pipeline/aggregator';
-import {_Metrics, NumberDimension} from '@src/goodmetrics/_Metrics';
+import {
+  _Metrics,
+  NumberDimension,
+  StringDimension,
+} from '@src/goodmetrics/_Metrics';
 import {StatisticSet} from '@src/goodmetrics/data/StatisticSet';
 import {Histogram} from '@src/goodmetrics/data/Histogram';
 
@@ -161,6 +165,94 @@ describe('AggregatedBatch', () => {
 });
 
 describe('Aggregator', () => {
+  it.each([0, -1, NaN, Infinity, -Infinity, 0.5, 2_147_483_648])(
+    'rejects unsupported aggregation width %s',
+    aggregationWidthMillis => {
+      expect(() => new Aggregator({aggregationWidthMillis})).toThrow(
+        /aggregationWidthMillis/
+      );
+    }
+  );
+
+  it.each([1, 2_147_483_647])(
+    'accepts supported aggregation width %s',
+    aggregationWidthMillis => {
+      expect(() => new Aggregator({aggregationWidthMillis})).not.toThrow();
+    }
+  );
+
+  it('combines records with equivalent effective shared dimensions', async () => {
+    const aggregator = new Aggregator({
+      aggregationWidthMillis: 20,
+      metricDimensions: new Map([
+        ['region', new StringDimension('region', 'west')],
+      ]),
+    });
+    const implicit = new _Metrics({name: 'orders', timestampMillis: 1});
+    implicit.measure('count', 1);
+    const explicit = new _Metrics({name: 'orders', timestampMillis: 1});
+    explicit.dimension('region', 'west');
+    explicit.measure('count', 1);
+    const override = new _Metrics({name: 'orders', timestampMillis: 1});
+    override.dimension('region', 'east');
+    override.measure('count', 1);
+    aggregator.emit(implicit);
+    aggregator.emit(explicit);
+    aggregator.emit(override);
+
+    const {value} = await aggregator.consume().next();
+    if (!(value instanceof AggregatedBatch)) {
+      throw new Error('expected an aggregated batch');
+    }
+    const datums = value.asGoodmetrics();
+    expect(datums).toHaveLength(2);
+    const west = datums.find(
+      datum => datum.dimensions.get('region')?.string === 'west'
+    );
+    const east = datums.find(
+      datum => datum.dimensions.get('region')?.string === 'east'
+    );
+    expect(west?.measurements.get('count')?.statistic_set?.samplecount).toBe(2);
+    expect(east?.measurements.get('count')?.statistic_set?.samplecount).toBe(1);
+    aggregator.close();
+  });
+
+  it('flushes accumulated metrics promptly after the consumer was paused', async () => {
+    jest.useFakeTimers({now: 1000});
+    const aggregator = new Aggregator({aggregationWidthMillis: 20});
+    const batches = aggregator.consume();
+    try {
+      const first = new _Metrics({name: 'first', timestampMillis: 1000});
+      first.measure('count', 1);
+      aggregator.emit(first);
+      const firstBatch = batches.next();
+      await jest.advanceTimersByTimeAsync(20);
+      expect((await firstBatch).value).toBeInstanceOf(AggregatedBatch);
+
+      await jest.advanceTimersByTimeAsync(100);
+      const second = new _Metrics({name: 'second', timestampMillis: 1120});
+      second.measure('count', 1);
+      aggregator.emit(second);
+      const nextBatch = batches.next();
+      let settled = false;
+      void nextBatch.then(() => {
+        settled = true;
+      });
+      await jest.advanceTimersByTimeAsync(25);
+
+      expect(settled).toBe(true);
+      const result = await nextBatch;
+      expect(result.value).toBeInstanceOf(AggregatedBatch);
+      if (result.value instanceof AggregatedBatch) {
+        expect(result.value.asGoodmetrics()[0].metric).toBe('second');
+      }
+    } finally {
+      aggregator.close();
+      await jest.runOnlyPendingTimersAsync();
+      jest.useRealTimers();
+    }
+  });
+
   it('aggregates emitted metrics and yields a batch once the aggregation width elapses', async () => {
     const aggregator = new Aggregator({aggregationWidthMillis: 20});
 
