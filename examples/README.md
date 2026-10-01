@@ -60,8 +60,9 @@ sends Basic authorization using the instance ID and token, as described in
 Use `MetricsSetups.grafanaCloudOtlpHttp` for a long-running process or
 `MetricsSetups.grafanaCloudOtlpHttpForLambda` for a short-lived process.
 
-Pass `resourceDimensions` as an array of dimensions, as the cloud examples show. Existing
-`Map<string, Dimension>` inputs remain supported.
+Pass `resourceDimensions`, `metricDimensions`, or `sharedDimensions` as arrays of dimensions.
+Existing `Map<string, Dimension>` inputs remain supported. The generic OTLP example uses an
+empty `sharedDimensions` array; add dimensions there to include them on every metric.
 
 When configured, `metricDimensions` are added to every OTLP data point; a dimension recorded on
 an individual metric takes precedence if its name matches a shared dimension. Preaggregated

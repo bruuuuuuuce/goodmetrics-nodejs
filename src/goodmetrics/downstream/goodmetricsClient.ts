@@ -1,4 +1,4 @@
-import {_Metrics, Dimension} from '../_Metrics';
+import {_Metrics, Dimension, DimensionCollection} from '../_Metrics';
 import {goodmetrics} from 'goodmetrics-generated';
 import MetricsClient = goodmetrics.MetricsClient;
 import {ChannelCredentials, Interceptor} from '@grpc/grpc-js';
@@ -9,7 +9,7 @@ import {SecurityMode} from './openTelemetryClient';
 interface GoodmetricsClientProps {
   address: string;
   channelCredentials: ChannelCredentials;
-  sharedDimensions: Map<string, Dimension>;
+  sharedDimensions: ReadonlyMap<string, Dimension>;
 }
 interface GoodmetricsConnectProps {
   hostname: string;
@@ -24,11 +24,11 @@ interface GoodmetricsConnectProps {
    * Dimensions to attach to every batch this client sends, via `MetricsRequest.shared_dimensions`.
    * Defaults to no shared dimensions.
    */
-  sharedDimensions?: Map<string, Dimension>;
+  sharedDimensions?: DimensionCollection;
 }
 
 export class GoodmetricsClient {
-  private readonly sharedDimensions: Map<string, Dimension>;
+  private readonly sharedDimensions: ReadonlyMap<string, Dimension>;
   private readonly client: MetricsClient;
   private readonly interceptors: Interceptor[];
   private constructor(props: GoodmetricsClientProps) {
@@ -48,10 +48,17 @@ export class GoodmetricsClient {
         channelCredentials = ChannelCredentials.createSsl();
         break;
     }
+    const dimensions = props.sharedDimensions ?? new Map<string, Dimension>();
+    const sharedDimensions =
+      'get' in dimensions
+        ? dimensions
+        : new Map<string, Dimension>(
+            dimensions.map(dimension => [dimension.name, dimension])
+          );
     return new GoodmetricsClient({
       address: `${props.hostname}:${props.port}`,
       channelCredentials,
-      sharedDimensions: props.sharedDimensions ?? new Map<string, Dimension>(),
+      sharedDimensions,
     });
   }
 

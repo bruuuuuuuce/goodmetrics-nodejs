@@ -1,5 +1,11 @@
 import {LogLevel, MetricsFactory, TotaltimeType} from './metricsFactory';
-import {_Metrics, Dimension, Metrics, ResourceDimensions} from './_Metrics';
+import {
+  _Metrics,
+  Dimension,
+  DimensionCollection,
+  Metrics,
+  ResourceDimensions,
+} from './_Metrics';
 import {
   OpenTelemetryClient,
   SecurityMode,
@@ -82,7 +88,7 @@ interface RawNativeLambdaOtlpForLambdaProps {
    * Include resource dimensions on each metric instead of on the Resource. You'd use this for
    * downstreams that either do not support or do something undesirable with Resource dimensions.
    */
-  sharedDimensions: Map<string, Dimension>;
+  sharedDimensions: DimensionCollection;
   /**
    * example `ingest.lightstep.com`
    */
@@ -111,7 +117,7 @@ interface ConfigureBatchedUnaryLightstepSinkProps {
 
 interface ConfigureBatchedPreaggregatedLightstepSinkProps {
   aggregationWidthMillis?: number;
-  metricDimensions?: Map<string, Dimension>;
+  metricDimensions?: DimensionCollection;
   batchSize: number;
   batchMaxAgeSeconds: number;
   client: OtlpMetricsExporter;
@@ -123,14 +129,14 @@ interface PrivateOtelClientProps {
   headers: Header[];
   ingestUrl: string;
   ingestPort: number;
-  metricDimensions: Map<string, Dimension>;
+  metricDimensions: DimensionCollection;
   resourceDimensions: ResourceDimensions;
 }
 
 interface LightstepNativeOtlpProps {
   lightstepAccessToken: string;
   aggregationWidthMillis: number;
-  metricDimensions?: Map<string, Dimension>;
+  metricDimensions?: DimensionCollection;
   resourceDimensions?: ResourceDimensions;
   logError: (message: string, error: unknown) => void;
   lightstepUrl?: string;
@@ -156,7 +162,7 @@ interface OtlpHttpLambdaProps {
   endpointUrl: string;
   headers?: Record<string, string>;
   resourceDimensions: ResourceDimensions;
-  metricDimensions?: Map<string, Dimension>;
+  metricDimensions?: DimensionCollection;
   timeoutMillis?: number;
   logError: (message: string, error: unknown) => void;
   doLogSuccess?: boolean;
@@ -168,7 +174,7 @@ interface OtlpHttpBatchProps {
   endpointUrl: string;
   headers?: Record<string, string>;
   resourceDimensions: ResourceDimensions;
-  metricDimensions?: Map<string, Dimension>;
+  metricDimensions?: DimensionCollection;
   timeoutMillis?: number;
   aggregationWidthMillis?: number;
   unaryBatchSizeMaxMetricsCount?: number;

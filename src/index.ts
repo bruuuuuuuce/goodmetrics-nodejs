@@ -26,4 +26,7 @@ export {
   BooleanDimension,
   NumberDimension,
 };
-export type {ResourceDimensions} from './goodmetrics/_Metrics';
+export type {
+  DimensionCollection,
+  ResourceDimensions,
+} from './goodmetrics/_Metrics';
