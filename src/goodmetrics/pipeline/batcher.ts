@@ -7,6 +7,8 @@ interface Props<TUpstream> {
   batchAgeSeconds?: number;
 }
 
+const MAX_BATCH_AGE_SECONDS = 2_147_483;
+
 export function validateBatchSize(batchSize: number, name = 'batchSize'): void {
   if (!Number.isSafeInteger(batchSize) || batchSize <= 0) {
     throw new RangeError(`${name} must be a positive integer`);
@@ -17,8 +19,12 @@ export function validateBatchAgeSeconds(
   batchAgeSeconds: number,
   name = 'batchAgeSeconds'
 ): void {
-  if (!Number.isFinite(batchAgeSeconds) || batchAgeSeconds < 0) {
-    throw new RangeError(`${name} must be a non-negative finite number`);
+  if (
+    !Number.isFinite(batchAgeSeconds) ||
+    batchAgeSeconds < 0 ||
+    batchAgeSeconds > MAX_BATCH_AGE_SECONDS
+  ) {
+    throw new RangeError(`${name} must be between 0 and 2,147,483 seconds`);
   }
 }
 
