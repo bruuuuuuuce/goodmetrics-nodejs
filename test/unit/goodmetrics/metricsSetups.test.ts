@@ -11,29 +11,60 @@ const ExportRequest =
     .ExportMetricsServiceRequest;
 
 interface Received {
+  method?: string;
   headers: http.IncomingHttpHeaders;
   names: string[];
+  resourceAttributes: {key: string; value: string}[];
+  metricAttributes: {key: string; value: string}[];
 }
 
 let server: http.Server | undefined;
 const factories: MetricsFactory[] = [];
 
-async function receiver(received: Received[]): Promise<string> {
+async function receiver(
+  received: Received[],
+  reply?: (response: http.ServerResponse) => void
+): Promise<string> {
   server = http.createServer((request, response) => {
     const chunks: Buffer[] = [];
     request.on('data', (chunk: Buffer) => chunks.push(chunk));
     request.on('end', () => {
       const decoded = ExportRequest.deserializeBinary(Buffer.concat(chunks));
       received.push({
+        method: request.method,
         headers: request.headers,
         names: decoded.resource_metrics.flatMap(resource =>
           resource.scope_metrics.flatMap(scope =>
             scope.metrics.map(metric => metric.name)
           )
         ),
+        resourceAttributes: decoded.resource_metrics.flatMap(resource =>
+          resource.resource.attributes.map(attribute => ({
+            key: attribute.key,
+            value: attribute.value.string_value,
+          }))
+        ),
+        metricAttributes: decoded.resource_metrics.flatMap(resource =>
+          resource.scope_metrics.flatMap(scope =>
+            scope.metrics.flatMap(metric =>
+              metric.has_gauge
+                ? metric.gauge.data_points.flatMap(point =>
+                    point.attributes.map(attribute => ({
+                      key: attribute.key,
+                      value: attribute.value.string_value,
+                    }))
+                  )
+                : []
+            )
+          )
+        ),
       });
-      response.writeHead(200);
-      response.end();
+      if (reply) {
+        reply(response);
+      } else {
+        response.writeHead(200);
+        response.end();
+      }
     });
   });
   await new Promise<void>(resolve => server?.listen(0, '127.0.0.1', resolve));
@@ -49,6 +80,85 @@ afterEach(async () => {
     server.closeAllConnections();
     await new Promise<void>(resolve => server?.close(() => resolve()));
     server = undefined;
+  }
+});
+
+it('waits for the Lambda HTTP export and sends configured headers and dimensions', async () => {
+  const received: Received[] = [];
+  let requestArrived: (() => void) | undefined;
+  const arrived = new Promise<void>(resolve => {
+    requestArrived = resolve;
+  });
+  let releaseResponse: (() => void) | undefined;
+  const endpointUrl = await receiver(received, response => {
+    releaseResponse = () => {
+      response.writeHead(204);
+      response.end();
+    };
+    requestArrived?.();
+  });
+  const factory = MetricsSetups.otlpHttpForLambda({
+    endpointUrl,
+    headers: {'x-test-key': 'secret'},
+    resourceDimensions: new Map([
+      ['service', new StringDimension('service', 'checkout')],
+    ]),
+    metricDimensions: new Map([
+      ['region', new StringDimension('region', 'west')],
+    ]),
+    logError: jest.fn(),
+  });
+  factories.push(factory);
+
+  let settled = false;
+  const recording = factory
+    .record({name: 'orders'}, metrics => metrics.measure('count', 1))
+    .then(() => {
+      settled = true;
+    });
+  await arrived;
+  expect(settled).toBe(false);
+  expect(received).toHaveLength(1);
+  expect(received[0].method).toBe('POST');
+  expect(received[0].headers['x-test-key']).toBe('secret');
+  expect(received[0].names).toContain('orders_count');
+  expect(received[0].resourceAttributes).toEqual([
+    {key: 'service', value: 'checkout'},
+  ]);
+  expect(received[0].metricAttributes).toContainEqual({
+    key: 'region',
+    value: 'west',
+  });
+  releaseResponse?.();
+  await recording;
+  expect(settled).toBe(true);
+});
+
+it('logs a failed Lambda HTTP export', async () => {
+  const received: Received[] = [];
+  const endpointUrl = await receiver(received, response => {
+    response.writeHead(503);
+    response.end('unavailable');
+  });
+  const logged: {message: string; error: unknown}[] = [];
+  const factory = MetricsSetups.otlpHttpForLambda({
+    endpointUrl,
+    resourceDimensions: new Map(),
+    logError: (message, error) => logged.push({message, error}),
+  });
+  factories.push(factory);
+
+  await factory.record({name: 'orders'}, metrics =>
+    metrics.measure('count', 1)
+  );
+
+  expect(received).toHaveLength(1);
+  expect(logged).toHaveLength(1);
+  expect(logged[0].message).toBe('error while sending blocking metrics');
+  const error = logged[0].error;
+  expect(error).toBeInstanceOf(Error);
+  if (error instanceof Error) {
+    expect(error.message).toContain('status 503');
   }
 });
 
