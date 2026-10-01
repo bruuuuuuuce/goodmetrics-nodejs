@@ -1,4 +1,4 @@
-import {Histogram} from '../../src/goodmetrics/data/Histogram';
+import {Histogram} from '../../../../src/goodmetrics/data/Histogram';
 
 describe('Histogram', () => {
   it('counts repeated values into the same bucket', () => {

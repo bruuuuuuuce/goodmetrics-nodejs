@@ -2,13 +2,13 @@ import {
   MetricsFactory,
   TimestampAt,
   TotaltimeType,
-} from '../../src/goodmetrics/metricsFactory';
+} from '../../../src/goodmetrics/metricsFactory';
 import {
   _Metrics,
   MetricsBehavior,
   Metrics,
-} from '../../src/goodmetrics/_Metrics';
-import {MetricsSink} from '../../src/goodmetrics/pipeline/metricsSink';
+} from '../../../src/goodmetrics/_Metrics';
+import {MetricsSink} from '../../../src/goodmetrics/pipeline/metricsSink';
 
 function capturingSink(): MetricsSink & {emitted: _Metrics[]} {
   const emitted: _Metrics[] = [];

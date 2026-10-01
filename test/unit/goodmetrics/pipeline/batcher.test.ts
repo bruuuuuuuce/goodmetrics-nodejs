@@ -1,5 +1,5 @@
-import {Batcher} from '../../src/goodmetrics/pipeline/batcher';
-import {MetricsPipeline} from '../../src/goodmetrics/pipeline/metricsPipeline';
+import {Batcher} from '../../../../src/goodmetrics/pipeline/batcher';
+import {MetricsPipeline} from '../../../../src/goodmetrics/pipeline/metricsPipeline';
 
 function upstreamOf(items: string[]): MetricsPipeline<string> {
   return {

@@ -1,5 +1,5 @@
-import {SynchronizingBuffer} from '../../src/goodmetrics/pipeline/synchronizingBuffer';
-import {_Metrics} from '../../src/goodmetrics/_Metrics';
+import {SynchronizingBuffer} from '../../../../src/goodmetrics/pipeline/synchronizingBuffer';
+import {_Metrics} from '../../../../src/goodmetrics/_Metrics';
 
 function metric(name: string): _Metrics {
   return new _Metrics({name, timestampMillis: 1});
