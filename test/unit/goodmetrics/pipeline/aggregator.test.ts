@@ -183,7 +183,7 @@ describe('AggregatedBatch', () => {
 });
 
 describe('Aggregator', () => {
-  it.each([0, -1, NaN, Infinity, -Infinity, 0.5, 2_147_483_648])(
+  it.each([0, -1, NaN, Infinity, -Infinity, 0.5, 1.5, 2_147_483_648])(
     'rejects unsupported aggregation width %s',
     aggregationWidthMillis => {
       expect(() => new Aggregator({aggregationWidthMillis})).toThrow(

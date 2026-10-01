@@ -220,12 +220,12 @@ export function validateAggregationWidthMillis(
   aggregationWidthMillis: number
 ): void {
   if (
-    !Number.isFinite(aggregationWidthMillis) ||
+    !Number.isInteger(aggregationWidthMillis) ||
     aggregationWidthMillis < 1 ||
     aggregationWidthMillis > 2_147_483_647
   ) {
     throw new RangeError(
-      'aggregationWidthMillis must be between 1 and 2147483647 milliseconds'
+      'aggregationWidthMillis must be an integer between 1 and 2147483647 milliseconds'
     );
   }
 }
