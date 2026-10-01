@@ -74,6 +74,29 @@ it('sends Datadog API key with a blocking metric export', async () => {
   expect(logError).not.toHaveBeenCalled();
 });
 
+it('encodes Grafana Cloud Basic auth from instance ID and a Unicode token', async () => {
+  const received: Received[] = [];
+  const endpointUrl = await receiver(received);
+  const factory = MetricsSetups.grafanaCloudOtlpHttpForLambda({
+    endpointUrl,
+    instanceId: '123',
+    accessPolicyToken: 'tokén:part',
+    resourceDimensions: new Map<string, Dimension>(),
+    logError: jest.fn(),
+  });
+  factories.push(factory);
+
+  await factory.record({name: 'orders'}, metrics =>
+    metrics.measure('count', 1)
+  );
+
+  expect(received).toHaveLength(1);
+  expect(received[0].headers.authorization).toBe(
+    `Basic ${Buffer.from('123:tokén:part', 'utf8').toString('base64')}`
+  );
+  expect(received[0].names).toContain('orders_count');
+});
+
 it('uses the existing unary and preaggregated factories for batched HTTP', async () => {
   const received: Received[] = [];
   const endpointUrl = await receiver(received);

@@ -185,6 +185,14 @@ type DatadogBatchProps = Omit<OtlpHttpBatchProps, 'headers'> & {apiKey: string};
 type DatadogLambdaProps = Omit<OtlpHttpLambdaProps, 'headers'> & {
   apiKey: string;
 };
+type GrafanaBatchProps = Omit<OtlpHttpBatchProps, 'headers'> & {
+  instanceId: string;
+  accessPolicyToken: string;
+};
+type GrafanaLambdaProps = Omit<OtlpHttpLambdaProps, 'headers'> & {
+  instanceId: string;
+  accessPolicyToken: string;
+};
 
 export class MetricsSetups {
   static otlpHttp(props: OtlpHttpBatchProps): ConfiguredMetrics {
@@ -279,6 +287,32 @@ export class MetricsSetups {
   static datadogOtlpHttpForLambda(props: DatadogLambdaProps): MetricsFactory {
     const {apiKey, ...rest} = props;
     return this.otlpHttpForLambda({...rest, headers: {'dd-api-key': apiKey}});
+  }
+
+  static grafanaCloudOtlpHttp(props: GrafanaBatchProps): ConfiguredMetrics {
+    const {instanceId, accessPolicyToken, ...rest} = props;
+    const encoded = Buffer.from(
+      `${instanceId}:${accessPolicyToken}`,
+      'utf8'
+    ).toString('base64');
+    return this.otlpHttp({
+      ...rest,
+      headers: {Authorization: `Basic ${encoded}`},
+    });
+  }
+
+  static grafanaCloudOtlpHttpForLambda(
+    props: GrafanaLambdaProps
+  ): MetricsFactory {
+    const {instanceId, accessPolicyToken, ...rest} = props;
+    const encoded = Buffer.from(
+      `${instanceId}:${accessPolicyToken}`,
+      'utf8'
+    ).toString('base64');
+    return this.otlpHttpForLambda({
+      ...rest,
+      headers: {Authorization: `Basic ${encoded}`},
+    });
   }
 
   static goodMetrics(props?: GoodmetricsSetupProps): ConfiguredMetrics {
