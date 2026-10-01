@@ -5,13 +5,7 @@ import {Histogram} from '../data/Histogram';
 import {Aggregation} from '../data/Aggregation';
 import {StatisticSet} from '../data/StatisticSet';
 import {library} from '../data/otlp/library';
-import {
-  _Metrics,
-  BooleanDimension,
-  Dimension,
-  NumberDimension,
-  StringDimension,
-} from '../_Metrics';
+import {_Metrics, Dimension} from '../_Metrics';
 import {MetricsPipeline} from './metricsPipeline';
 import {MetricsSink} from './metricsSink';
 import {CancellationToken} from './cancellationToken';
@@ -26,15 +20,9 @@ type DimensionPosition = Set<Dimension>;
  * contents) without every emit() landing in its own bucket.
  */
 function dimensionValueKey(dimension: Dimension): string {
-  if (dimension instanceof StringDimension) {
-    return `s:${dimension.name}:${dimension.value}`;
-  } else if (dimension instanceof NumberDimension) {
-    return `n:${dimension.name}:${dimension.value}`;
-  } else if (dimension instanceof BooleanDimension) {
-    return `b:${dimension.name}:${dimension.value}`;
-  } else {
-    throw new Error('cannot key an unknown dimension type');
-  }
+  return Buffer.from(dimension.asOtlpKeyValue().serializeBinary()).toString(
+    'hex'
+  );
 }
 
 function positionKey(position: DimensionPosition): string {

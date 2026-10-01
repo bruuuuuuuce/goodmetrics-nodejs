@@ -7,11 +7,29 @@ import {
 } from '@src/goodmetrics/pipeline/aggregator';
 import {
   _Metrics,
+  Dimension,
   NumberDimension,
   StringDimension,
 } from '@src/goodmetrics/_Metrics';
 import {StatisticSet} from '@src/goodmetrics/data/StatisticSet';
 import {Histogram} from '@src/goodmetrics/data/Histogram';
+
+class CustomDimension extends Dimension {
+  constructor(
+    name: string,
+    private readonly value: string
+  ) {
+    super(name);
+  }
+
+  asOtlpKeyValue(): ReturnType<Dimension['asOtlpKeyValue']> {
+    return new StringDimension(this.name, this.value).asOtlpKeyValue();
+  }
+
+  asGoodmetricsDimension(): ReturnType<Dimension['asGoodmetricsDimension']> {
+    return new StringDimension(this.name, this.value).asGoodmetricsDimension();
+  }
+}
 
 describe('bucket()', () => {
   it('clamps negative values to 0', () => {
@@ -214,6 +232,34 @@ describe('Aggregator', () => {
     );
     expect(west?.measurements.get('count')?.statistic_set?.samplecount).toBe(2);
     expect(east?.measurements.get('count')?.statistic_set?.samplecount).toBe(1);
+    aggregator.close();
+  });
+
+  it('groups custom shared dimensions by their encoded value', async () => {
+    const aggregator = new Aggregator({
+      aggregationWidthMillis: 20,
+      metricDimensions: new Map([
+        ['region', new CustomDimension('region', 'west')],
+      ]),
+    });
+    const implicit = new _Metrics({name: 'orders', timestampMillis: 1});
+    implicit.measure('count', 1);
+    const explicit = new _Metrics({name: 'orders', timestampMillis: 1});
+    explicit.dimension('region', 'west');
+    explicit.measure('count', 2);
+    aggregator.emit(implicit);
+    aggregator.emit(explicit);
+
+    const {value} = await aggregator.consume().next();
+    if (!(value instanceof AggregatedBatch)) {
+      throw new Error('expected an aggregated batch');
+    }
+    const datums = value.asGoodmetrics();
+    expect(datums).toHaveLength(1);
+    expect(datums[0].dimensions.get('region')?.string).toBe('west');
+    expect(
+      datums[0].measurements.get('count')?.statistic_set?.samplecount
+    ).toBe(2);
     aggregator.close();
   });
 
