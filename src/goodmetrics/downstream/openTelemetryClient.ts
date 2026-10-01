@@ -1,4 +1,4 @@
-import {Dimension, _Metrics} from '../_Metrics';
+import {Dimension, ResourceDimensions, _Metrics} from '../_Metrics';
 import {otlp_metric_service, otlp_metrics} from 'otlp-generated';
 import ResourceMetrics = otlp_metrics.opentelemetry.proto.metrics.v1.ResourceMetrics;
 import MetricsServiceClient = otlp_metric_service.opentelemetry.proto.collector.metrics.v1.MetricsServiceClient;
@@ -15,7 +15,7 @@ export enum SecurityMode {
 interface OpenTelemetryClientProps {
   address: string;
   channelCredentials: ChannelCredentials;
-  resourceDimensions: Map<string, Dimension>;
+  resourceDimensions: ResourceDimensions;
   metricDimensions: Map<string, Dimension>;
   timeoutMillis: number;
   logRawPayload?: (resourceMetrics: ResourceMetrics) => void;
@@ -25,7 +25,7 @@ interface OpenTelemetryClientProps {
 interface ConnectProps {
   sillyOtlpHostname?: string;
   port?: number;
-  resourceDimensions: Map<string, Dimension>;
+  resourceDimensions: ResourceDimensions;
   metricDimensions: Map<string, Dimension>;
   securityMode?: SecurityMode;
   timeoutMillis?: number;

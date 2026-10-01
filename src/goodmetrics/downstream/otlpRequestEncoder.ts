@@ -1,4 +1,4 @@
-import {Dimension, _Metrics} from '../_Metrics';
+import {Dimension, ResourceDimensions, _Metrics} from '../_Metrics';
 import {AggregatedBatch} from '../pipeline/aggregator';
 import {library} from '../data/otlp/library';
 import {
@@ -14,14 +14,16 @@ import ExportMetricsServiceRequest = otlp_metric_service.opentelemetry.proto.col
 import Resource = otlp_resource.opentelemetry.proto.resource.v1.Resource;
 
 interface OtlpRequestEncoderProps {
-  resourceDimensions: Map<string, Dimension>;
+  resourceDimensions: ResourceDimensions;
   metricDimensions: Map<string, Dimension>;
   logRawPayload?: (resourceMetrics: ResourceMetrics) => void;
 }
 
-function asOtlpDimensions(map: Map<string, Dimension>): KeyValue[] {
+function asOtlpDimensions(dimensions: ResourceDimensions): KeyValue[] {
   const keyValues: KeyValue[] = [];
-  map.forEach(dimension => keyValues.push(dimension.asOtlpKeyValue()));
+  for (const dimension of dimensions.values()) {
+    keyValues.push(dimension.asOtlpKeyValue());
+  }
   return keyValues;
 }
 

@@ -27,6 +27,9 @@ export abstract class Dimension {
   abstract asGoodmetricsDimension(): goodmetrics.Dimension;
 }
 
+export type ResourceDimensions =
+  ReadonlyMap<string, Dimension> | readonly Dimension[];
+
 export class StringDimension extends Dimension {
   readonly value: string;
   constructor(name: string, value: string) {
