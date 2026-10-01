@@ -1,7 +1,7 @@
 # Goodmetrics Nodejs
 
 Nodejs metrics client to be used with either the goodmetrics protocol, or any open telemetry compliant protocol.
-Includes OpenTelemetry clients for Lightstep, direct Datadog Cloud intake, and other OTLP backends.
+Includes OpenTelemetry clients for Lightstep, direct Datadog and Grafana Cloud intake, and other OTLP backends.
 
 This library is based off of the opensource [kotlin goodmetrics library](https://github.com/kvc0/goodmetrics_kotlin)
 
@@ -39,10 +39,11 @@ const main = async () => {
 main().finally();
 ```
 
-See [`examples/`](./examples) for direct [Datadog](./examples/datadog-cloud.ts) intake,
-long-running processes with batching, generic OTLP/gRPC receivers, and the bespoke
-`goodmetrics` protocol. Direct cloud intake uses OTLP/HTTP Protobuf at a complete `/v1/metrics`
-URL; the existing gRPC examples point to an Agent or collector.
+See [`examples/`](./examples) for direct [Datadog](./examples/datadog-cloud.ts) and
+[Grafana Cloud](./examples/grafana-cloud.ts) intake, long-running processes with batching,
+generic OTLP/gRPC receivers, and the bespoke `goodmetrics` protocol. Direct cloud intake uses
+OTLP/HTTP Protobuf at a complete `/v1/metrics` URL; the existing gRPC examples point to an
+Agent, Alloy, or collector.
 
 ## Protos
 - [open telemetry client protos](https://github.com/bruuuuuuuce/otlp-generated)
